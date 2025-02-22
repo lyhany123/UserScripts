@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Gemini AI Inline Translator (Popup)
 // @namespace    Violentmonkey Scripts
-// @version      3.0
+// @version      3.1
 // @description  Dịch văn bản bôi đen bằng Google Gemini API. Hỗ trợ popup phân tích từ vựng, popup dịch và dịch nhanh
 // @author       King1x32, Voodanh
 // @match        *://*/*
@@ -12,10 +12,9 @@
 // @grant        GM_registerMenuCommand
 // ==/UserScript==
 
-(function() {
+(function () {
   "use strict";
 
-  // Cấu hình chính
   const CONFIG = {
     API: {
       providers: {
@@ -32,25 +31,26 @@
             ],
             generationConfig: { temperature: 0.7 },
           }),
-          responseParser: (response) =>
-            response?.candidates?.[0]?.content?.parts?.[0]?.text,
+          responseParser: (response) => {
+            return response?.candidates?.[0]?.content?.parts?.[0]?.text;
+          },
         },
         openai: {
-          url: () => 'https://api.groq.com/openai/v1/chat/completions',
+          url: () => "https://api.groq.com/openai/v1/chat/completions",
           headers: (apiKey) => ({
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
           }),
           body: (prompt) => ({
             model: "llama-3.3-70b-versatile",
             messages: [{ role: "user", content: prompt }],
-            temperature: 0.7
+            temperature: 0.7,
           }),
-          responseParser: (response) => response.choices?.[0]?.message?.content
+          responseParser: (response) => response.choices?.[0]?.message?.content,
         },
       },
       currentProvider: "gemini",
-      apiKey: "AIzaqCxKWjFH32-luLxrdPH9",
+      apiKey: "tu_lay_them_vao",
       maxRetries: 3,
       retryDelay: 1000,
     },
@@ -135,9 +135,8 @@
         theme: "dark",
         apiProvider: "gemini",
         apiKey: {
-          gemini: "AIzaqCxKWjFH32-luLxrdPH9",
-          openai:
-            "gsk_gFKR12MgR5VD22dmnlCd7zKA",
+          gemini: "tu_lay_them_vao",
+          openai: "tu_lay_them_vao",
         },
         shortcuts: {
           quickTranslate: { key: "t", altKey: true },
@@ -149,9 +148,17 @@
           doubleClick: { translateType: "quick" },
           hold: { translateType: "advanced" },
         },
+        touchOptions: {
+          enabled: true,
+          sensitivity: 100,
+          twoFingers: { translateType: "popup" },
+          threeFingers: { translateType: "advanced" },
+          fourFingers: { translateType: "quick" },
+        },
         displayOptions: {
           showOriginalText: true,
           fontSize: "16px",
+          minPopupWidth: "320px",
           maxPopupWidth: "90vw",
         },
         cacheOptions: {
@@ -317,8 +324,28 @@
             border: none !important;
             margin: 5px !important;
         }
+        #cancelSettings {
+            background: ${isDark ? "#666" : "#ddd"} !important;
+            color: ${isDark ? "#fff" : "#000"} !important;
+            padding: 5px 15px !important;
+            border-radius: 4px !important;
+            cursor: pointer !important;
+            border: none !important;
+            margin: 5px !important;
+        }
+        #cancelSettings:hover {
+            background: ${isDark ? "#888" : "#bbb"} !important;
+        }
         #saveSettings {
             background: #007BFF !important;
+            padding: 5px 15px !important;
+            border-radius: 4px !important;
+            cursor: pointer !important;
+            border: none !important;
+            margin: 5px !important;
+        }
+        #saveSettings:hover {
+            background: #009FFF !important;
         }
         .radio-group {
             display: flex !important;
@@ -354,6 +381,44 @@
                       <input type="radio" name="theme" value="dark" ${isDark ? "checked" : ""}>
                       <span>Tối</span>
                   </label>
+              </div>
+          </div>
+
+          <div style="margin-bottom: 15px;">
+              <h3>HIỂN THỊ</h3>
+              <div class="settings-grid">
+                  <span class="settings-label">Hiện văn bản gốc:</span>
+                  <input type="checkbox" id="showOriginalText" ${this.settings.displayOptions?.showOriginalText ? "checked" : ""}>
+              </div>
+              <div class="settings-grid">
+                  <span class="settings-label">Cỡ chữ:</span>
+                  <select id="fontSize" class="settings-input">
+                      <option value="12px" ${this.settings.displayOptions?.fontSize === "12px" ? "selected" : ""}>Nhỏ (12px)</option>
+                      <option value="14px" ${this.settings.displayOptions?.fontSize === "14px" ? "selected" : ""}>Vừa (14px)</option>
+                      <option value="16px" ${this.settings.displayOptions?.fontSize === "16px" ? "selected" : ""}>Hơi lớn (16px)</option>
+                      <option value="18px" ${this.settings.displayOptions?.fontSize === "18px" ? "selected" : ""}>Lớn (18px)</option>
+                      <option value="20px" ${this.settings.displayOptions?.fontSize === "20px" ? "selected" : ""}>Cực lớn (20px)</option>
+                  </select>
+              </div>
+              <div class="settings-grid">
+                  <span class="settings-label">Độ rộng tối thiểu:</span>
+                  <select id="minPopupWidth" class="settings-input">
+                      <option value="200px" ${this.settings.displayOptions?.minPopupWidth === "200px" ? "selected" : ""}>Rất nhỏ (200px)</option>
+                      <option value="300px" ${this.settings.displayOptions?.minPopupWidth === "300px" ? "selected" : ""}>Nhỏ (300px)</option>
+                      <option value="400px" ${this.settings.displayOptions?.minPopupWidth === "400px" ? "selected" : ""}>Vừa (400px)</option>
+                      <option value="500px" ${this.settings.displayOptions?.minPopupWidth === "500px" ? "selected" : ""}>Hơi lớn (500px)</option>
+                      <option value="600px" ${this.settings.displayOptions?.minPopupWidth === "600px" ? "selected" : ""}>Lớn (600px)</option>
+                      <option value="700px" ${this.settings.displayOptions?.minPopupWidth === "700px" ? "selected" : ""}>Cực lớn (700px)</option>
+                  </select>
+              </div>
+              <div class="settings-grid">
+                  <span class="settings-label">Độ rộng tối đa:</span>
+                  <select id="maxPopupWidth" class="settings-input">
+                      <option value="60vw" ${this.settings.displayOptions?.maxPopupWidth === "60vw" ? "selected" : ""}>60% màn hình</option>
+                      <option value="70vw" ${this.settings.displayOptions?.maxPopupWidth === "70vw" ? "selected" : ""}>70% màn hình</option>
+                      <option value="80vw" ${this.settings.displayOptions?.maxPopupWidth === "80vw" ? "selected" : ""}>80% màn hình</option>
+                      <option value="90vw" ${this.settings.displayOptions?.maxPopupWidth === "90vw" ? "selected" : ""}>90% màn hình</option>
+                  </select>
               </div>
           </div>
 
@@ -421,6 +486,44 @@
           </div>
 
           <div style="margin-bottom: 15px;">
+              <h3>CẢM ỨNG ĐA ĐIỂM</h3>
+              <div class="settings-grid">
+                  <span class="settings-label">Bật cảm ứng:</span>
+                  <input type="checkbox" id="touchEnabled" ${this.settings.touchOptions?.enabled ? "checked" : ""}>
+              </div>
+              <div class="settings-grid">
+                  <span class="settings-label">Hai ngón tay:</span>
+                  <select id="twoFingersSelect" class="settings-input">
+                      <option value="quick" ${this.settings.touchOptions?.twoFingers?.translateType === "quick" ? "selected" : ""}>Dịch nhanh</option>
+                      <option value="popup" ${this.settings.touchOptions?.twoFingers?.translateType === "popup" ? "selected" : ""}>Dịch popup</option>
+                      <option value="advanced" ${this.settings.touchOptions?.twoFingers?.translateType === "advanced" ? "selected" : ""}>Dịch nâng cao</option>
+                  </select>
+              </div>
+              <div class="settings-grid">
+                  <span class="settings-label">Ba ngón tay:</span>
+                  <select id="threeFingersSelect" class="settings-input">
+                      <option value="quick" ${this.settings.touchOptions?.threeFingers?.translateType === "quick" ? "selected" : ""}>Dịch nhanh</option>
+                      <option value="popup" ${this.settings.touchOptions?.threeFingers?.translateType === "popup" ? "selected" : ""}>Dịch popup</option>
+                      <option value="advanced" ${this.settings.touchOptions?.threeFingers?.translateType === "advanced" ? "selected" : ""}>Dịch nâng cao</option>
+                  </select>
+              </div>
+              <div class="settings-grid">
+                  <span class="settings-label">Bốn ngón tay:</span>
+                  <select id="fourFingersSelect" class="settings-input">
+                      <option value="quick" ${this.settings.touchOptions?.fourFingers?.translateType === "quick" ? "selected" : ""}>Dịch nhanh</option>
+                      <option value="popup" ${this.settings.touchOptions?.fourFingers?.translateType === "popup" ? "selected" : ""}>Dịch popup</option>
+                      <option value="advanced" ${this.settings.touchOptions?.fourFingers?.translateType === "advanced" ? "selected" : ""}>Dịch nâng cao</option>
+                  </select>
+              </div>
+              <div class="settings-grid">
+                  <span class="settings-label">Độ nhạy (ms):</span>
+                  <input type="number" id="touchSensitivity" class="settings-input"
+                      value="${this.settings.touchOptions?.sensitivity || 100}"
+                      min="50" max="500" step="50">
+                </div>
+          </div>
+
+          <div style="margin-bottom: 15px;">
               <h3>RATE LIMIT</h3>
               <div class="settings-grid">
                   <span class="settings-label">Số yêu cầu tối đa:</span>
@@ -448,7 +551,7 @@
               </div>
           </div>
           <div style="text-align:right;">
-              <button onclick="this.parentElement.parentElement.remove()">
+              <button id="cancelSettings">
                   Hủy
               </button>
               <button id="saveSettings"
@@ -457,14 +560,27 @@
               </button>
           </div>
         `;
-      // Thêm các class riêng cho container
 
       container.className = "translator-settings-container";
       const saveButton = container.querySelector("#saveSettings");
 
+      const cancelButton = container.querySelector("#cancelSettings");
+      cancelButton.addEventListener("click", () => {
+        if (container && container.parentNode) {
+          container.parentNode.removeChild(container);
+        }
+      });
+
       saveButton.addEventListener("click", () => {
         const newSettings = {
           theme: container.querySelector('input[name="theme"]:checked').value,
+          displayOptions: {
+            showOriginalText:
+              container.querySelector("#showOriginalText").checked,
+            fontSize: container.querySelector("#fontSize").value,
+            minPopupWidth: container.querySelector("#minPopupWidth").value,
+            maxPopupWidth: container.querySelector("#maxPopupWidth").value,
+          },
           apiProvider: container.querySelector(
             'input[name="apiProvider"]:checked',
           ).value,
@@ -500,6 +616,23 @@
               translateType: container.querySelector("#holdSelect").value,
             },
           },
+          touchOptions: {
+            enabled: container.querySelector("#touchEnabled").checked,
+            twoFingers: {
+              translateType: container.querySelector("#twoFingersSelect").value,
+            },
+            threeFingers: {
+              translateType: container.querySelector("#threeFingersSelect")
+                .value,
+            },
+            fourFingers: {
+              translateType:
+                container.querySelector("#fourFingersSelect").value,
+            },
+            sensitivity: parseInt(
+              container.querySelector("#touchSensitivity").value,
+            ),
+          },
           rateLimit: {
             maxRequests: parseInt(
               container.querySelector("#maxRequests").value,
@@ -515,7 +648,6 @@
               container.querySelector("#cacheExpiration").value,
             ),
           },
-          displayOptions: this.settings.displayOptions,
         };
 
         this.saveSettings(newSettings);
@@ -620,25 +752,32 @@
       while (attempts < this.config.maxRetries) {
         try {
           await this.checkRateLimit();
+
           const response = await this.makeRequest(provider, prompt);
+
           this.requestCount++;
-          return provider.responseParser(response);
+          const parsedResponse = provider.responseParser(response);
+
+          if (!parsedResponse) {
+            throw new Error("Empty response from API");
+          }
+
+          return parsedResponse;
         } catch (error) {
+          console.error(`Attempt ${attempts + 1} failed:`, error);
           lastError = error;
           attempts++;
 
-          if (error.message.includes("Rate limit")) {
-            await new Promise((resolve) =>
-              setTimeout(
-                resolve,
-                this.config.retryDelay * Math.pow(2, attempts),
-              ),
-            );
-          } else if (attempts >= this.config.maxRetries) {
-            throw lastError;
+          if (attempts < this.config.maxRetries) {
+            const delay = this.config.retryDelay * Math.pow(2, attempts);
+            await new Promise((resolve) => setTimeout(resolve, delay));
           }
         }
       }
+
+      throw (
+        lastError || new Error("Failed to get translation after all retries")
+      );
     }
 
     async checkRateLimit() {
@@ -656,23 +795,39 @@
       }
     }
 
-    makeRequest(provider, prompt) {
+    async makeRequest(provider, prompt) {
       return new Promise((resolve, reject) => {
+        const apiKey = this.config.apiKey[this.currentProvider];
+        const url = provider.url(apiKey);
+        const headers =
+          typeof provider.headers === "function"
+            ? provider.headers(apiKey)
+            : provider.headers;
+
         GM_xmlhttpRequest({
           method: "POST",
-          url: provider.url(this.config.apiKey[this.currentProvider]),
-          headers: provider.headers,
+          url: url,
+          headers: headers,
           data: JSON.stringify(provider.body(prompt)),
           onload: (response) => {
             if (response.status >= 200 && response.status < 300) {
-              resolve(JSON.parse(response.responseText));
+              try {
+                const parsedResponse = JSON.parse(response.responseText);
+                resolve(parsedResponse);
+              } catch (error) {
+                console.error("Parse error:", error);
+                reject(new Error("Failed to parse API response"));
+              }
             } else if (response.status === 429) {
               reject(new Error("Rate limit exceeded"));
             } else {
               reject(new Error(`API Error: ${response.status}`));
             }
           },
-          onerror: (error) => reject(new Error(`Connection error: ${error}`)),
+          onerror: (error) => {
+            console.error("API request failed:", error);
+            reject(new Error(`Connection error: ${error}`));
+          },
         });
       });
     }
@@ -680,18 +835,46 @@
 
   class UIManager {
     constructor(translator) {
+      if (!translator) {
+        throw new Error("Translator instance is required");
+      }
       this.translator = translator;
       this.currentTranslateButton = null;
       this.isTranslating = false;
+      this.translatingStatus = null;
       this.ignoreNextSelectionChange = false;
       this.touchCount = 0;
+
+      this.handleTranslateButtonClick =
+        this.handleTranslateButtonClick.bind(this);
+      this.setupClickHandlers = this.setupClickHandlers.bind(this);
+      this.handleTextSelection = this.handleTextSelection.bind(this);
+      this.showTranslatingStatus = this.showTranslatingStatus.bind(this);
+      this.removeTranslatingStatus = this.removeTranslatingStatus.bind(this);
+      this.resetState = this.resetState.bind(this);
     }
 
-    createTranslationDiv(translatedText) {
+    createTranslationDiv(translatedText, originalText) {
       const div = document.createElement("div");
       div.classList.add("translation-div");
-      Object.assign(div.style, CONFIG.STYLES.translation);
-      div.textContent = `Dịch: ${translatedText}`;
+
+      const displayOptions =
+        this.translator.userSettings.settings.displayOptions;
+
+      Object.assign(div.style, {
+        ...CONFIG.STYLES.translation,
+        fontSize: displayOptions.fontSize,
+      });
+
+      if (displayOptions.showOriginalText && originalText) {
+        div.innerHTML = `
+        <div style="margin-bottom: 8px; color: #666;">Gốc: ${originalText}</div>
+        <div>Dịch: ${translatedText}</div>
+      `;
+      } else {
+        div.textContent = `Dịch: ${translatedText}`;
+      }
+
       return div;
     }
 
@@ -744,6 +927,8 @@
       this.removeTranslateButton();
 
       const theme = CONFIG.THEME[CONFIG.THEME.mode];
+      const displayOptions =
+        this.translator.userSettings.settings.displayOptions;
       const popup = document.createElement("div");
       popup.classList.add("draggable");
 
@@ -752,18 +937,33 @@
         backgroundColor: theme.background,
         borderColor: theme.border,
         color: theme.text,
+        minWidth: displayOptions.minPopupWidth,
+        maxWidth: displayOptions.maxPopupWidth,
+        fontSize: displayOptions.fontSize,
       };
       Object.assign(popup.style, popupStyle);
 
       const cleanedText = translatedText.replace(/(\*\*)(.*?)\1/g, "<b>$2</b>");
-      popup.innerHTML = `
-            <div>
-                <h3 style="color: ${theme.title};">Dịch</h3>
-                <div style="overflow-y: auto; max-height: 400px; color: ${theme.content}; font-size: 16px;">
-                    ${this.formatTranslation(cleanedText, originalText)}
-                </div>
-            </div>
-        `;
+
+      let content = "";
+      if (displayOptions.showOriginalText) {
+        content += `
+        <div style="margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid ${theme.border}; color: ${theme.content};">
+          <h4 style="margin-bottom: 5px; color: ${theme.title};">Văn bản gốc:</h4>
+          <div>${originalText}</div>
+        </div>
+      `;
+      }
+      content += `
+      <div>
+        <h3 style="color: ${theme.title};">Bản dịch</h3>
+        <div style="overflow-y: auto; max-height: 400px; color: ${theme.content};">
+          ${this.formatTranslation(cleanedText)}
+        </div>
+      </div>
+    `;
+
+      popup.innerHTML = content;
 
       const closeButton = document.createElement("button");
       closeButton.innerText = "Đóng";
@@ -783,7 +983,7 @@
       document.body.appendChild(popup);
     }
 
-    formatTranslation(text, originalText) {
+    formatTranslation(text) {
       return text
         .split("<br>")
         .map((line) => {
@@ -823,6 +1023,7 @@
     }
 
     handleTextSelection = debounce(() => {
+      if (this.isTranslating) return;
       if (this.ignoreNextSelectionChange || this.isTranslating) {
         this.ignoreNextSelectionChange = false;
         return;
@@ -866,6 +1067,111 @@
       this.setupClickHandlers(selection);
     }
 
+    handleTranslateButtonClick = async (selection, translateType) => {
+      try {
+        const selectedText = selection.toString().trim();
+
+        if (!selectedText) {
+          return;
+        }
+
+        const targetElement = selection.anchorNode?.parentElement;
+        if (!targetElement) {
+          return;
+        }
+
+        this.removeTranslateButton();
+
+        this.showTranslatingStatus();
+
+        if (!this.translator) {
+          throw new Error("Translator instance not found");
+        }
+
+        switch (translateType) {
+          case "quick":
+            await this.translator.translate(selectedText, targetElement);
+            break;
+          case "popup":
+            await this.translator.translate(
+              selectedText,
+              targetElement,
+              false,
+              true,
+            );
+            break;
+          case "advanced":
+            await this.translator.translate(selectedText, targetElement, true);
+            break;
+          default:
+        }
+      } catch (error) {
+        console.error("Translation error:", error);
+      } finally {
+        if (this.isDouble) {
+          const newSelection = window.getSelection();
+          if (newSelection.toString().trim()) {
+            this.resetState();
+            this.handleTextSelection(newSelection);
+          }
+        } else {
+          this.resetState();
+          return;
+        }
+      }
+    };
+
+    showTranslatingStatus() {
+      if (!document.getElementById("translator-animation-style")) {
+        const style = document.createElement("style");
+        style.id = "translator-animation-style";
+        style.textContent = `
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        .center-translate-status {
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          background: rgba(0, 0, 0, 0.8);
+          color: white;
+          padding: 15px 25px;
+          border-radius: 8px;
+          z-index: 2147483647;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          font-family: Arial, sans-serif;
+          font-size: 14px;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .spinner {
+          display: inline-block;
+          width: 20px;
+          height: 20px;
+          border: 3px solid rgba(255,255,255,0.3);
+          border-radius: 50%;
+          border-top-color: #fff;
+          animation: spin 1s ease-in-out infinite;
+        }
+      `;
+        document.head.appendChild(style);
+      }
+
+      this.removeTranslatingStatus();
+
+      const status = document.createElement("div");
+      status.className = "center-translate-status";
+      status.innerHTML = `
+      <div class="spinner"></div>
+      <span>Đang dịch...</span>
+    `;
+      document.body.appendChild(status);
+      this.translatingStatus = status;
+    }
+
     setupClickHandlers(selection) {
       this.pressTimer = null;
       this.isLongPress = false;
@@ -883,7 +1189,7 @@
         this.isLongPress = false;
         const currentTime = Date.now();
 
-        if (currentTime - this.lastTime < 500) {
+        if (currentTime - this.lastTime < 400) {
           this.count++;
           clearTimeout(this.pressTimer);
           clearTimeout(this.timer);
@@ -918,7 +1224,7 @@
               this.translator.userSettings.settings.clickOptions.singleClick
                 .translateType;
             this.handleTranslateButtonClick(selection, singleClickType);
-          }, 500);
+          }, 400);
         } else if (this.count >= 2) {
           this.isDouble = true;
           const doubleClickType =
@@ -932,106 +1238,97 @@
       // PC Events
       this.currentTranslateButton.addEventListener("mousedown", handleStart);
       this.currentTranslateButton.addEventListener("mouseup", handleEnd);
-      this.currentTranslateButton.addEventListener("mouseleave", () =>
-        this.resetState(),
-      );
+      this.currentTranslateButton.addEventListener("mouseleave", () => {
+        if (this.translateType) {
+          this.resetState();
+        }
+      });
 
       // Mobile Events
       this.currentTranslateButton.addEventListener("touchstart", handleStart);
       this.currentTranslateButton.addEventListener("touchend", handleEnd);
-      this.currentTranslateButton.addEventListener("touchcancel", () =>
-        this.resetState(),
-      );
+      this.currentTranslateButton.addEventListener("touchcancel", () => {
+        if (this.translateType) {
+          this.resetState();
+        }
+      });
     }
 
-    handleTranslateButtonClick = async (selection, translateType) => {
-      const selectedText = selection.toString().trim();
-      if (!selectedText) return;
-      const targetElement = selection.anchorNode?.parentElement;
-      if (!targetElement) return;
-
-      switch (translateType) {
-        case "quick":
-          await this.translator.translate(selectedText, targetElement);
-          this.resetState();
-          break;
-        case "popup":
-          await this.translator.translate(
-            selectedText,
-            targetElement,
-            false,
-            true,
-          );
-          this.resetState();
-          break;
-        case "advanced":
-          await this.translator.translate(selectedText, targetElement, true);
-          this.resetState();
-          break;
-      }
-
-      if (!this.isDouble) return;
-      const newSelection = window.getSelection();
-      if (newSelection.toString().trim()) {
-        this.handleTextSelection(newSelection);
-      }
-    };
-
     setupDocumentTapHandler() {
-      const ignoreTags = new Set(["BUTTON", "SPAN"]);
-      let touchTimeout = null;
+      let touchCount = 0;
+      let touchTimer = null;
 
-      const handleTouchStart = (e) => {
+      const handleTouchStart = async (e) => {
+        if (this.isTranslating) return;
+
+        const touchOptions = this.translator.userSettings.settings.touchOptions;
+        if (!touchOptions?.enabled) return;
+
         const target = e.target;
-
-        if (ignoreTags.has(target.tagName)) return;
-
         if (
           target.closest(".translation-div") ||
-          target.closest(".draggable") ||
-          target === this.currentTranslateButton
+          target.closest(".draggable")
         ) {
           return;
         }
 
-        if (touchTimeout) {
-          clearTimeout(touchTimeout);
+        const selection = window.getSelection();
+        const selectedText = selection?.toString().trim();
+        if (!selectedText) return;
+
+        const targetElement = selection.anchorNode?.parentElement;
+        if (!targetElement) return;
+
+        if (touchTimer) {
+          clearTimeout(touchTimer);
         }
 
-        touchTimeout = setTimeout(() => {
-          const touchCount = e.touches.length;
+        touchCount = e.touches.length;
 
-          if (touchCount === 3) {
-            e.preventDefault();
-            const selection = window.getSelection();
-            const selectedText = selection?.toString().trim();
-            if (!selectedText) return;
-            const targetElement = selection.anchorNode?.parentElement;
-            if (!targetElement) return;
-            this.translator.translate(selectedText, targetElement, true);
-            this.resetState();
-          } else if (touchCount === 2) {
-            e.preventDefault();
-            const selection = window.getSelection();
-            const selectedText = selection?.toString().trim();
-            if (!selectedText) return;
-            const targetElement = selection.anchorNode?.parentElement;
-            if (!targetElement) return;
-            this.translator.translate(selectedText, targetElement, false, true);
-            this.resetState();
+        touchTimer = setTimeout(async () => {
+          let translateType;
+
+          switch (touchCount) {
+            case 2:
+              translateType = touchOptions.twoFingers?.translateType;
+              break;
+            case 3:
+              translateType = touchOptions.threeFingers?.translateType;
+              break;
+            case 4:
+              translateType = touchOptions.fourFingers?.translateType;
+              break;
+            default:
+              return;
           }
-        }, 100); // Đợi 50ms để đảm bảo tất cả các ngón tay đã chạm màn hình
+
+          if (!translateType) return;
+
+          try {
+            e.preventDefault();
+            await this.handleTranslateButtonClick(selection, translateType);
+          } catch (error) {
+            console.error("Touch translation error:", error);
+          } finally {
+            touchCount = 0;
+            touchTimer = null;
+          }
+        }, touchOptions.sensitivity || 100); // Sử dụng độ nhạy từ settings
       };
 
-      document.addEventListener("touchstart", handleTouchStart, {
+      const handleTouch = () => {
+        if (touchTimer && translateType) {
+          clearTimeout(touchTimer);
+          touchTimer = null;
+        }
+        touchCount = 0;
+      };
+
+      document.addEventListener("touchstart", handleTouchStart.bind(this), {
         passive: false,
       });
-      document.addEventListener("touchend", () => {
-        if (touchTimeout) {
-          clearTimeout(touchTimeout);
-        }
-        this.touchCount = 0;
-      });
+      document.addEventListener("touchup", handleTouch.bind(this));
+      document.addEventListener("touchcancel", handleTouch.bind(this));
     }
 
     resetState() {
@@ -1041,14 +1338,23 @@
       this.lastTime = 0;
       this.count = 0;
       this.isDown = false;
+      this.isTranslating = false;
       this.ignoreNextSelectionChange = false;
       this.removeTranslateButton();
+      this.removeTranslatingStatus();
     }
 
     removeTranslateButton() {
       if (this.currentTranslateButton) {
         this.currentTranslateButton.remove();
         this.currentTranslateButton = null;
+      }
+    }
+
+    removeTranslatingStatus() {
+      if (this.translatingStatus) {
+        this.translatingStatus.remove();
+        this.translatingStatus = null;
       }
     }
   }
@@ -1080,32 +1386,37 @@
       isAdvanced = false,
       displaySimple = false,
     ) {
-      if (this.ui.isTranslating) return;
+      if (!text) {
+        return;
+      }
 
       try {
-        this.ui.isTranslating = true;
         const prompt = this.createPrompt(text, isAdvanced);
+
         let translatedText = this.cache.get(text, isAdvanced);
 
         if (!translatedText) {
           translatedText = await this.api.request(prompt);
+
           if (translatedText) {
             this.cache.set(text, translatedText, isAdvanced);
           }
         }
 
         if (translatedText) {
-          isAdvanced || displaySimple
-            ? this.ui.displayPopup(translatedText, text)
-            : this.ui.showTranslationBelow(targetElement, translatedText);
+          if (isAdvanced || displaySimple) {
+            this.ui.displayPopup(translatedText, text);
+          } else {
+            this.ui.showTranslationBelow(targetElement, translatedText);
+          }
+        } else {
+          throw new Error("No translation received");
         }
       } catch (error) {
+        console.error("Translation error:", error);
         this.handleError(error, targetElement);
-      } finally {
-        this.ui.isTranslating = false;
       }
     }
-
     createPrompt(text, isAdvanced) {
       return isAdvanced
         ? `Dịch và phân tích từ khóa: "${text}"`
@@ -1139,31 +1450,61 @@
         }
       };
 
-      const handleShortcuts = (e) => {
+      const handleShortcuts = async (e) => {
         const selection = window.getSelection();
         const selectedText = selection?.toString().trim();
-        if (!selectedText) return;
+        if (!selectedText || this.ui.isTranslating) return;
 
         const targetElement = selection.anchorNode?.parentElement;
         if (!targetElement) return;
-        const shortcuts = this.userSettings.getSetting("shortcuts");
+        const shortcuts = this.userSettings.settings.shortcuts;
 
         if (e.altKey) {
+          let translateType = null;
+
           if (e.key === shortcuts.quickTranslate.key) {
             e.preventDefault();
-            this.translate(selectedText, targetElement);
+            translateType = "quick";
           } else if (e.key === shortcuts.popupTranslate.key) {
             e.preventDefault();
-            this.translate(selectedText, targetElement, false, true);
+            translateType = "popup";
           } else if (e.key === shortcuts.advancedTranslate.key) {
             e.preventDefault();
-            this.translate(selectedText, targetElement, true);
+            translateType = "advanced";
+          }
+
+          if (translateType) {
+            try {
+              this.ui.isTranslating = true;
+              this.ui.showTranslatingStatus();
+
+              switch (translateType) {
+                case "quick":
+                  await this.translate(selectedText, targetElement);
+                  break;
+                case "popup":
+                  await this.translate(
+                    selectedText,
+                    targetElement,
+                    false,
+                    true,
+                  );
+                  break;
+                case "advanced":
+                  await this.translate(selectedText, targetElement, true);
+                  break;
+              }
+            } catch (error) {
+              console.error("Translation error:", error);
+            } finally {
+              this.ui.resetState();
+            }
           }
         }
       };
 
-      document.addEventListener("keydown", handleSettings);
-      document.addEventListener("keydown", handleShortcuts);
+      document.addEventListener("keydown", handleSettings.bind(this));
+      document.addEventListener("keydown", handleShortcuts.bind(this));
       document.addEventListener("mouseup", this.ui.handleTextSelection);
       document.addEventListener("selectionchange", this.ui.handleTextSelection);
     }
