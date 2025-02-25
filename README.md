@@ -1,60 +1,151 @@
-# Gemini AI Inline Translator (Popup) v3.1
+# Gemini AI Translator v3.2
 
-Script dịch văn bản tích hợp trực tiếp trên trình duyệt sử dụng Google Gemini API và OpenAI API, với nhiều tính năng tiện ích.
+![Version](https://img.shields.io/badge/version-3.2-blue)
+![Status](https://img.shields.io/badge/status-stable-green)
+![License](https://img.shields.io/badge/license-MIT-orange)
 
-## Tính Năng Chính
+## 📑 Mục lục
+- [Tính năng nổi bật](#tính-năng-mới-nổi-bật)
+- [Yêu cầu hệ thống](#-yêu-cầu-hệ-thống)
+- [Cài đặt & Sử dụng](#-cài-đặt--sử-dụng)
+- [So sánh với v3.1](#-so-sánh-với-v31)
+- [Thông số kỹ thuật](#-thông-số-kỹ-thuật)
+- [Lưu ý quan trọng](#️-lưu-ý-quan-trọng)
+- [Liên hệ & Đóng góp](#-liên-hệ--đóng-góp)
 
-### 1. Ba Chế Độ Dịch
-- **Dịch Nhanh**: Hiển thị bản dịch ngay dưới văn bản gốc
-- **Dịch Popup**: Hiển thị trong cửa sổ popup có thể di chuyển
-- **Dịch Nâng Cao**: Bao gồm phân tích từ khóa và dịch chi tiết
+## ✨ Tính năng mới nổi bật
 
-### 2. Đa Dạng Cách Kích Hoạt
-- **Phím Tắt**:
-  - Alt + T: Dịch nhanh
-  - Alt + Q: Dịch popup
-  - Alt + A: Dịch nâng cao
-  - Alt + S: Mở cài đặt
-- **Chuột**:
-  - Nhấp đơn: Dịch popup
-  - Nhấp đúp: Dịch nhanh
-  - Giữ chuột: Dịch nâng cao
-- **Cảm Ứng Đa Điểm** (Có thể tùy chỉnh):
-  - Hai ngón tay: Dịch popup
-  - Ba ngón tay: Dịch nâng cao
-  - Bốn ngón tay: Dịch nhanh
+### 🎮 Phương thức kích hoạt đa dạng
 
-### 3. Giao Diện Thông Minh
-- Animation hiển thị trạng thái đang dịch
-- Nút dịch tự động xuất hiện khi bôi đen văn bản
-- Popup có thể kéo thả
-- Hai chế độ giao diện: Sáng/Tối
-- Tùy chỉnh hiển thị:
-  - Kích thước font chữ
-  - Độ rộng popup tối thiểu/tối đa
-  - Hiển thị/ẩn văn bản gốc
+#### ⌨️ Phím tắt
+- Alt + T: Dịch nhanh
+- Alt + Q: Dịch popup
+- Alt + A: Dịch nâng cao
+- Alt + S: Mở cài đặt
 
-### 4. Tích Hợp API
-- Google Gemini API
-- OpenAI API (qua Groq)
-- Dễ dàng chuyển đổi giữa các nhà cung cấp
-- Tùy chỉnh API key
+#### 🖱️ Nút dịch
+- Nhấp đơn: Tùy chọn (mặc định: Dịch popup)
+- Nhấp đúp: Tùy chọn (mặc định: Dịch nhanh)
+- Giữ chuột: Tùy chọn (mặc định: Dịch nâng cao)
 
-### 5. Tối Ưu Hiệu Suất
-- Hệ thống cache thông minh
-- Giới hạn tốc độ request
-- Tự động thử lại khi gặp lỗi
-- Xử lý đồng thời nhiều yêu cầu
+#### 📱 Cảm ứng đa điểm
+- Hai ngón tay: Tùy chọn (mặc định: Dịch popup)
+- Ba ngón tay: Tùy chọn (mặc định: Dịch nâng cao)
+- Bốn ngón tay: Tùy chọn (mặc định: Dịch nhanh)
+- Độ nhạy có thể điều chỉnh (mặc định: 100ms)
 
-### 6. Bảo Mật & Ổn Định
-- Lưu trữ cài đặt an toàn
-- Xử lý lỗi thông minh
-- Tương thích đa nền tảng
-- Hoạt động ổn định trên nhiều trang web
+### 🎵 Dịch Media - Tính năng mới
 
-## Cập Nhật Mới v3.1
-- Thêm animation trạng thái đang dịch
-- Cải thiện UX với nút dịch thông minh
-- Bổ sung tùy chỉnh cảm ứng đa điểm
-- Mở rộng tùy chọn hiển thị
-- Khắc phục lỗi nút dịch biến mất khi lướt chuột
+#### 🔊 Audio Support
+- Hỗ trợ định dạng: mp3, wav, ogg, m4a, aac, flac, wma, opus, amr, midi
+- Giới hạn file: 100MB
+- Chất lượng dịch tối ưu
+
+#### 🎥 Video Support
+- Định dạng: mp4, webm, ogg, avi, mov, wmv, flv, 3gp, mkv
+- Giới hạn file: 200MB
+- Phân tích ngữ cảnh thông minh
+
+### 📷 OCR Nâng cao
+
+#### 🖼️ Định dạng đa dạng
+- Hỗ trợ: jpeg, png, webp, heic, heif
+- Giới hạn: 15MB
+- Độ chính xác cao
+
+#### 🔍 Xử lý thông minh
+- Tự động nhận diện text
+- Phân tích bố cục
+- Tối ưu kết quả
+
+### ⚙️ Quản lý Cài đặt Nâng cao
+
+#### 💾 Xuất/Nhập Cài đặt
+- Xuất cài đặt dạng JSON
+- Nhập cài đặt từ file
+
+#### 🎨 Giao diện Cài đặt Mới
+- Giao diện Dark/Light mode
+- Phân nhóm chức năng:
+  - Giao diện
+  - API Provider (Gemini/OpenAI)
+  - API Key
+  - Phím tắt
+  - Nút dịch
+  - Cảm ứng đa điểm
+  - Rate limit
+  - Cache
+
+### 🤖 Model AI cải tiến
+
+#### 🧠 Gemini Models
+- Fast: gemini-2.0-flash-lite/flash/flash-exp
+- Pro: gemini-2.0-pro-exp-02-05/pro-exp
+- Vision: gemini-2.0-flash-thinking-exp-01-21/exp
+- Custom: Tùy chọn model
+
+#### ⚡ Cấu hình linh hoạt
+- Temperature: 0.2-1.0
+- Top P: 0-1
+- Top K: 1-100
+
+## 💻 Yêu cầu hệ thống
+- Trình duyệt: Chrome 80+, Firefox 72+, Edge 80+
+- Extension: Violentmonkey/Tampermonkey
+- API Key: Gemini/OpenAI
+- RAM: 4GB+
+- Ổ cứng trống: 500MB+
+
+## 📥 Cài đặt & Sử dụng
+1. Cài đặt Violentmonkey từ store trình duyệt
+2. [Cài đặt script](https://github.com/king1x32/UserScripts/raw/refs/heads/main/Gemini_AI_Translator_(Inline-Popup).user.js)
+3. Đăng ký và lấy API Key (Gemini/OpenAI)
+4. Cấu hình API Key trong phần cài đặt (Alt + S)
+5. Khởi động lại trình duyệt
+
+## 📊 Thông số kỹ thuật
+| Tính năng | Thông số |
+|-----------|----------|
+| Cache Text | 100 entries/5m |
+| Cache Image | 50 entries/30m |
+| Cache Media | 50 entries/30m |
+| Audio Limit | 100MB |
+| Video Limit | 200MB |
+| OCR Limit | 15MB |
+| Rate Limit | 5 req/10s |
+
+## ⚠️ Lưu ý quan trọng
+- Backup cài đặt thường xuyên
+- Không chia sẻ API key
+- Cache tự động clear sau mỗi phiên
+- Kiểm tra rate limit khi dịch nhiều
+- Tối ưu cấu hình cho hiệu suất tốt nhất
+
+## 📈 So sánh với v3.1
+
+### ✨ Tính năng mới
+- Thêm dịch media (audio/video)
+- OCR dịch nâng cao đa định dạng
+- Xuất/Nhập cài đặt
+- Cache system đa lớp
+- Model AI mới
+- UI/UX cải tiến
+
+### 🔄 Cải tiến
+- Giao diện cài đặt trực quan
+- Tùy biến model AI linh hoạt
+- Tăng độ ổn định
+- Tối ưu hiệu suất
+- Xử lý lỗi tốt hơn
+
+## 📞 Liên hệ & Đóng góp
+- 🐛 Báo lỗi: [Voz](https://voz.vn/t/script-dung-ai-%C4%91e-dich-moi-thu-text-anh-audio-video.1072947/) [GitHub Issues](https://github.com/king1x32/UserScripts/issues)
+- 💡 Góp ý: [Voz](https://voz.vn/t/script-dung-ai-%C4%91e-dich-moi-thu-text-anh-audio-video.1072947/) [GitHub Discussions](https://github.com/king1x32/UserScripts/discussions)
+- 📧 Email: nhvnhvnhv07@mail.com
+- 💬 Discord: [Join](https://discord.gg/CywqJTph)
+
+---
+
+> 💡 **Tip**: Sử dụng phím tắt để truy cập nhanh các tính năng thường dùng và tùy chỉnh cài đặt theo nhu cầu để có trải nghiệm tốt nhất.
+
+Script v3.2 mang đến trải nghiệm dịch thuật toàn diện với nhiều phương thức kích hoạt, tính năng mới và khả năng tùy biến cao thông qua hệ thống cài đặt nâng cấp.
