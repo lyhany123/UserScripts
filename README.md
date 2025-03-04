@@ -1,25 +1,26 @@
-# Gemini AI Translator v3.2
+# Gemini AI Translator v4.0
 
-![Version](https://img.shields.io/badge/version-3.2-blue)
-![Status](https://img.shields.io/badge/status-stable-green)
+![Version](https://img.shields.io/badge/version-4.0-blue)
+![Status](https://img.shields.io/badge/status-updated-green)
 ![License](https://img.shields.io/badge/license-MIT-orange)
 
 ## 📑 Mục lục
-- [Tính năng nổi bật](#tính-năng-mới-nổi-bật)
+- [Tính năng nổi bật](#tính-năng-mới-và-nổi-bật)
 - [Yêu cầu hệ thống](#-yêu-cầu-hệ-thống)
 - [Cài đặt & Sử dụng](#-cài-đặt--sử-dụng)
-- [So sánh với v3.1](#-so-sánh-với-v31)
+- [So sánh với v3.2](#-so-sánh-với-v32)
 - [Thông số kỹ thuật](#-thông-số-kỹ-thuật)
 - [Lưu ý quan trọng](#️-lưu-ý-quan-trọng)
 - [Liên hệ & Đóng góp](#-liên-hệ--đóng-góp)
 
-## ✨ Tính năng mới nổi bật
+## ✨ Tính năng mới và nổi bật
 
 ### 🎮 Phương thức kích hoạt đa dạng
 
-#### ⌨️ Phím tắt
-- Alt + T: Dịch nhanh
-- Alt + Q: Dịch popup
+#### ⌨️ Phím  tắt
+- Alt + F: Dịch toàn bộ trang
+- Alt + Q: Dịch nhanh
+- Alt + E: Dịch popup
 - Alt + A: Dịch nâng cao
 - Alt + S: Mở cài đặt
 
@@ -31,75 +32,61 @@
 #### 📱 Cảm ứng đa điểm
 - Hai ngón tay: Tùy chọn (mặc định: Dịch popup)
 - Ba ngón tay: Tùy chọn (mặc định: Dịch nâng cao)
-- Bốn ngón tay: Tùy chọn (mặc định: Dịch nhanh)
+- Bốn ngón tay: Mở cài đặt giao diện người dùng
+- Năm ngón tay: Bật/tắt Tools dịch (nút quản lý tất cả chế độ dịch)
 - Độ nhạy có thể điều chỉnh (mặc định: 100ms)
 
-### 🎵 Dịch Media - Tính năng mới
+#### 💻 Context Menu dịch:
+   - Khi người dùng chuột phải vào một đoạn văn bản đã chọn, sẽ hiện ra menu ngữ cảnh để dịch.
+   - Menu ngữ cảnh cung cấp 3 tùy chọn: Dịch nhanh, Dịch popup và Dịch nâng cao.
+   - Khi chọn một tùy chọn, Translator sẽ thực hiện dịch đoạn văn bản đã chọn theo tùy chọn đó.
 
-#### 🔊 Audio Support
-- Hỗ trợ định dạng: mp3, wav, ogg, m4a, aac, flac, wma, opus, amr, midi
-- Giới hạn file: 100MB
-- Chất lượng dịch tối ưu
 
-#### 🎥 Video Support
-- Định dạng: mp4, webm, ogg, avi, mov, wmv, flv, 3gp, mkv
-- Giới hạn file: 200MB
-- Phân tích ngữ cảnh thông minh
+### 🌐 Dịch trang web nâng cao
+- Tự động phát hiện ngôn ngữ của trang web và dịch toàn bộ nội dung sang tiếng Việt.
+- Cho phép loại trừ các phần tử không cần dịch.
+- Hiển thị nút dịch trang tạm thời.
 
-### 📷 OCR Nâng cao
+### 🎵 Dịch Media (Audio/Video)
+- Hỗ trợ dịch nội dung audio và video.
+- Hỗ trợ nhiều định dạng phổ biến.
+- Giới hạn kích thước file media tối đa.
 
-#### 🖼️ Định dạng đa dạng
-- Hỗ trợ: jpeg, png, webp, heic, heif
-- Giới hạn: 15MB
-- Độ chính xác cao
+### 📷 Dịch OCR Nâng cao
+- Hỗ trợ nhiều định dạng ảnh phổ biến.
+- Tự động chụp màn hình và dịch.
+- Độ chính xác cao nhờ phân tích bố cục và xử lý thông minh.
 
-#### 🔍 Xử lý thông minh
-- Tự động nhận diện text
-- Phân tích bố cục
-- Tối ưu kết quả
+### ⚙️ Quản lý Cài đặt Nâng Cao
+- Giao diện cài đặt mới với Dark/Light mode.
+- Hỗ trợ xuất/nhập cài đặt dạng JSON.
+- Phân nhóm các tùy chỉnh theo chức năng.
 
-### ⚙️ Quản lý Cài đặt Nâng cao
+### 🤖 Model AI Cải Tiến
+- Hỗ trợ nhiều model Gemini khác nhau: Fast, Pro, Vision, Custom.
+- Tùy chỉnh linh hoạt các thông số như Temperature, Top P, Top K.
 
-#### 💾 Xuất/Nhập Cài đặt
-- Xuất cài đặt dạng JSON
-- Nhập cài đặt từ file
+### 🔍 Phím tắt và Tương tác
+- Phím tắt để truy cập nhanh các tính năng thường dùng.
+- Tùy chỉnh hành động của nút dịch (nhấp đơn, nhấp đúp, giữ).
+- Hỗ trợ cảm ứng đa điểm trên thiết bị di động.
 
-#### 🎨 Giao diện Cài đặt Mới
-- Giao diện Dark/Light mode
-- Phân nhóm chức năng:
-  - Giao diện
-  - API Provider (Gemini/OpenAI)
-  - API Key
-  - Phím tắt
-  - Nút dịch
-  - Cảm ứng đa điểm
-  - Rate limit
-  - Cache
-
-### 🤖 Model AI cải tiến
-
-#### 🧠 Gemini Models
-- Fast: gemini-2.0-flash-lite/flash/flash-exp
-- Pro: gemini-2.0-pro-exp-02-05/pro-exp
-- Vision: gemini-2.0-flash-thinking-exp-01-21/exp
-- Custom: Tùy chọn model
-
-#### ⚡ Cấu hình linh hoạt
-- Temperature: 0.2-1.0
-- Top P: 0-1
-- Top K: 1-100
+### 🔍 Tối ưu Hiệu Suất
+- Sử dụng đa luồng API để xử lý nhiều yêu cầu đồng thời.
+- Quản lý rate limit để tránh vượt quá giới hạn API.
+- Hệ thống cache mạnh mẽ cho văn bản, ảnh và media.
 
 ## 💻 Yêu cầu hệ thống
 - Trình duyệt: Chrome 80+, Firefox 72+, Edge 80+
 - Extension: Violentmonkey/Tampermonkey
 - API Key: Gemini/OpenAI
-- RAM: 4GB+
+- RAM: 2GB+
 - Ổ cứng trống: 500MB+
 
 ## 📥 Cài đặt & Sử dụng
 1. Cài đặt Violentmonkey từ store trình duyệt
 2. [Cài đặt script](https://github.com/king1x32/UserScripts/raw/refs/heads/main/Gemini_AI_Translator_(Inline-Popup).user.js)
-3. Đăng ký và lấy API Key (Gemini/OpenAI)
+3. Đăng ký và lấy API Key của Gemini
 4. Cấu hình API Key trong phần cài đặt (Alt + S)
 5. Khởi động lại trình duyệt
 
@@ -121,31 +108,32 @@
 - Kiểm tra rate limit khi dịch nhiều
 - Tối ưu cấu hình cho hiệu suất tốt nhất
 
-## 📈 So sánh với v3.1
+## 📈 So sánh với v3.2
 
 ### ✨ Tính năng mới
-- Thêm dịch media (audio/video)
-- OCR dịch nâng cao đa định dạng
-- Xuất/Nhập cài đặt
-- Cache system đa lớp
-- Model AI mới
-- UI/UX cải tiến
+- Hỗ trợ OpenAI API, cùng với Gemini API
+- Quản lý API key linh hoạt, có thể thêm/xóa nhiều key, đa luồng xử lý
+- Tính năng dịch trang web nâng cao
+- Hỗ trợ dịch media (audio/video)
+- Giao diện cài đặt mới với Dark/Light mode
+- Tùy chỉnh model Gemini (Fast, Pro, Vision, Custom)
+- Phím tắt và tương tác nâng cao (nút dịch, cảm ứng đa điểm)
+- Tối ưu hóa hiệu suất và khả năng mở rộng
 
 ### 🔄 Cải tiến
-- Giao diện cài đặt trực quan
-- Tùy biến model AI linh hoạt
-- Tăng độ ổn định
-- Tối ưu hiệu suất
-- Xử lý lỗi tốt hơn
+- Giao diện cài đặt trực quan và dễ sử dụng hơn
+- Tùy biến model AI linh hoạt hơn
+- Tăng độ ổn định và xử lý lỗi tốt hơn
+- Hệ thống cache mạnh mẽ hơn
 
 ## 📞 Liên hệ & Đóng góp
-- 🐛 Báo lỗi: [Voz](https://voz.vn/t/script-dung-ai-%C4%91e-dich-moi-thu-text-anh-audio-video.1072947/) [GitHub Issues](https://github.com/king1x32/UserScripts/issues)
-- 💡 Góp ý: [Voz](https://voz.vn/t/script-dung-ai-%C4%91e-dich-moi-thu-text-anh-audio-video.1072947/) [GitHub Discussions](https://github.com/king1x32/UserScripts/discussions)
-- 📧 Email: nhvnhvnhv07@mail.com
+- 🐛 Báo lỗi: [Voz](https://voz.vn/t/script-dung-ai-%C4%91e-dich-moi-thu-text-anh-audio-video.1072947/) hoặc [GitHub Issues](https://github.com/king1x32/UserScripts/issues)
+- 💡 Góp ý: [Voz](https://voz.vn/t/script-dung-ai-%C4%91e-dich-moi-thu-text-anh-audio-video.1072947/) hoặc [GitHub Discussions](https://github.com/king1x32/UserScripts/discussions)
+- 📧 Email: nguyenhuuvuong12@mail.com
 - 💬 Discord: [Join](https://discord.gg/CywqJTph)
 
 ---
 
 > 💡 **Tip**: Sử dụng phím tắt để truy cập nhanh các tính năng thường dùng và tùy chỉnh cài đặt theo nhu cầu để có trải nghiệm tốt nhất.
 
-Script v3.2 mang đến trải nghiệm dịch thuật toàn diện với nhiều phương thức kích hoạt, tính năng mới và khả năng tùy biến cao thông qua hệ thống cài đặt nâng cấp.
+Phiên bản 4.0 của Gemini AI Translator mang đến nhiều tính năng mới và cải tiến, như hỗ trợ OpenAI API, dịch trang web nâng cao, dịch media, giao diện cài đặt mới, tùy chỉnh model AI, phím tắt và tương tác nâng cao, cũng như tối ưu hóa hiệu suất. Đây là một bản nâng cấp đáng giá cho người dùng cần trải nghiệm dịch thuật toàn diện và hiệu quả.
