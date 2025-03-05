@@ -1,6 +1,6 @@
-# Gemini AI Translator v4.0
+# Gemini AI Translator v4.1
 
-![Version](https://img.shields.io/badge/version-4.0-blue)
+![Version](https://img.shields.io/badge/version-4.1-blue)
 ![Status](https://img.shields.io/badge/status-updated-green)
 ![License](https://img.shields.io/badge/license-MIT-orange)
 
@@ -57,6 +57,10 @@
 - Tự động chụp màn hình và dịch.
 - Độ chính xác cao nhờ phân tích bố cục và xử lý thông minh.
 
+### Dịch file PDF
+
+### Dịch file HTML
+
 ### ⚙️ Quản lý Cài đặt Nâng Cao
 - Giao diện cài đặt mới với Dark/Light mode.
 - Hỗ trợ xuất/nhập cài đặt dạng JSON.
@@ -85,7 +89,8 @@
 
 ## 📥 Cài đặt & Sử dụng
 1. Cài đặt Violentmonkey từ store trình duyệt
-2. [Cài đặt script](https://github.com/king1x32/UserScripts/raw/refs/heads/main/Gemini_AI_Translator_(Inline-Popup).user.js)
+2. Cài đặt script: [Github](https://github.com/king1x32/UserScripts/raw/refs/heads/main/Gemini_AI_Translator_(Inline&Popup).user.js) or [Greasyfork](https://greasyfork.org/vi/scripts/529348-gemini-ai-translator-inline-popup?locale_override=1)
+     Cài phiên bản mã hoá (nhẹ hơn, mượt hơn): [Github](https://raw.githubusercontent.com/king1x32/compiledUserscripts/release/release/Gemini20AI20Translator2028Inline2020Popup29.user.js)
 3. Đăng ký và lấy API Key của Gemini
 4. Cấu hình API Key trong phần cài đặt (Alt + S)
 5. Khởi động lại trình duyệt
@@ -136,4 +141,4 @@
 
 > 💡 **Tip**: Sử dụng phím tắt để truy cập nhanh các tính năng thường dùng và tùy chỉnh cài đặt theo nhu cầu để có trải nghiệm tốt nhất.
 
-Phiên bản 4.0 của Gemini AI Translator mang đến nhiều tính năng mới và cải tiến, như hỗ trợ OpenAI API, dịch trang web nâng cao, dịch media, giao diện cài đặt mới, tùy chỉnh model AI, phím tắt và tương tác nâng cao, cũng như tối ưu hóa hiệu suất. Đây là một bản nâng cấp đáng giá cho người dùng cần trải nghiệm dịch thuật toàn diện và hiệu quả.
+Phiên bản 4.1 của Gemini AI Translator mang đến nhiều tính năng mới và cải tiến, như hỗ trợ OpenAI API, dịch trang web nâng cao, dịch media, giao diện cài đặt mới, tùy chỉnh model AI, phím tắt và tương tác nâng cao, cũng như tối ưu hóa hiệu suất. Đây là một bản nâng cấp đáng giá cho người dùng cần trải nghiệm dịch thuật toàn diện và hiệu quả.
