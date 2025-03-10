@@ -83,7 +83,7 @@
 ## 💻 Yêu cầu hệ thống
 - Trình duyệt: Chrome 80+, Firefox 72+, Edge 80+
 - Extension: Violentmonkey/Tampermonkey
-- API Key: Gemini/OpenAI
+- API Key: Gemini AI
 - RAM: 2GB+
 - Ổ cứng trống: 500MB+
 
@@ -117,7 +117,6 @@
 ## 📈 So sánh với v3.2
 
 ### ✨ Tính năng mới
-- Hỗ trợ OpenAI API, cùng với Gemini API
 - Quản lý API key linh hoạt, có thể thêm/xóa nhiều key, đa luồng xử lý
 - Tính năng dịch trang web nâng cao
 - Hỗ trợ dịch media (audio/video)
@@ -142,4 +141,4 @@
 
 > 💡 **Tip**: Sử dụng phím tắt để truy cập nhanh các tính năng thường dùng và tùy chỉnh cài đặt theo nhu cầu để có trải nghiệm tốt nhất.
 
-Phiên bản 4.1 của Gemini AI Translator mang đến nhiều tính năng mới và cải tiến, như hỗ trợ OpenAI API, dịch trang web nâng cao, dịch media, giao diện cài đặt mới, tùy chỉnh model AI, phím tắt và tương tác nâng cao, cũng như tối ưu hóa hiệu suất. Đây là một bản nâng cấp đáng giá cho người dùng cần trải nghiệm dịch thuật toàn diện và hiệu quả.
+Phiên bản 4.1 của Gemini AI Translator mang đến nhiều tính năng mới và cải tiến, dịch trang web nâng cao, dịch media, giao diện cài đặt mới, tùy chỉnh model AI, phím tắt và tương tác nâng cao, cũng như tối ưu hóa hiệu suất. Đây là một bản nâng cấp đáng giá cho người dùng cần trải nghiệm dịch thuật toàn diện và hiệu quả.
