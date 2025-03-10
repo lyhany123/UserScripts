@@ -91,7 +91,7 @@
 1. Cài đặt Violentmonkey từ store trình duyệt
 2. Cài đặt script:
     - Phiên bản bình thường: [Github](https://github.com/king1x32/UserScripts/raw/refs/heads/main/Gemini_AI_Translator_(Inline&Popup).user.js) or [Greasyfork](https://greasyfork.org/vi/scripts/529348-gemini-ai-translator-inline-popup?locale_override=1)
-    - Phiên bản mã hoá (nhẹ hơn, mượt hơn): [Github](https://raw.githubusercontent.com/king1x32/compiledUserscripts/release/release/Gemini20AI20Translator2028Inline2020Popup29.user.js)
+    - Phiên bản nén (nhẹ hơn, mượt hơn): [Github](https://raw.githubusercontent.com/king1x32/compiledUserscripts/release/release/Gemini20AI20Translator2028Inline2020Popup29.user.js)
 3. Đăng ký và lấy API Key của Gemini
 4. Cấu hình API Key trong phần cài đặt (Alt + S)
 5. Khởi động lại trình duyệt
