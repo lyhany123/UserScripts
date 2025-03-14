@@ -1,144 +1,167 @@
-# Gemini AI Translator v4.1
+# Gemini AI Translator - Công cụ dịch thuật đa năng tích hợp AI
 
-![Version](https://img.shields.io/badge/version-4.1-blue)
+![Version](https://img.shields.io/badge/version-4.2-blue)
 ![Status](https://img.shields.io/badge/status-updated-green)
-![License](https://img.shields.io/badge/license-MIT-orange)
+![License](https://img.shields.io/badge/license-GNU-orange)
 
-## 📑 Mục lục
-- [Tính năng nổi bật](#tính-năng-mới-và-nổi-bật)
-- [Yêu cầu hệ thống](#-yêu-cầu-hệ-thống)
-- [Cài đặt & Sử dụng](#-cài-đặt--sử-dụng)
-- [So sánh với v3.2](#-so-sánh-với-v32)
-- [Thông số kỹ thuật](#-thông-số-kỹ-thuật)
-- [Lưu ý quan trọng](#️-lưu-ý-quan-trọng)
-- [Liên hệ & Đóng góp](#-liên-hệ--đóng-góp)
+<div align="center">
+  <img src="kings.jpg" alt="Translator AI Logo" width="200"/>
+  <br>
+  <i>Công cụ dịch thuật thông minh tích hợp AI (Google Gemini) cho trình duyệt</i>
+</div>
 
-## ✨ Tính năng mới và nổi bật
+## 📖 Mục lục
+- [Giới thiệu](#-giới-thiệu)
+- [Tính năng](#-tính-năng)
+- [Cài đặt](#-cài-đặt)
+- [Hướng dẫn sử dụng](#-hướng-dẫn-sử-dụng)
+- [Cấu hình](#-cấu-hình)
+- [Phím tắt](#-phím-tắt)
+- [Lưu ý](#-lưu-ý)
+- [Đóng góp](#-đóng-góp)
+- [Giấy phép](#-giấy-phép)
 
-### 🎮 Phương thức kích hoạt đa dạng
+## 🌟 Giới thiệu
 
-#### ⌨️ Phím  tắt
-- Alt + F: Dịch toàn bộ trang
-- Alt + Q: Dịch nhanh
-- Alt + E: Dịch popup
-- Alt + A: Dịch nâng cao
-- Alt + S: Mở cài đặt
+Translator AI là userscript dịch thuật tích hợp AI, cho phép dịch văn bản, hình ảnh, media và trang web trực tiếp trên trình duyệt. Sử dụng Google Gemini API để mang lại kết quả dịch chất lượng cao.
 
-#### 🖱️ Nút dịch
-- Nhấp đơn: Tùy chọn (mặc định: Dịch popup)
-- Nhấp đúp: Tùy chọn (mặc định: Dịch nhanh)
-- Giữ chuột: Tùy chọn (mặc định: Dịch nâng cao)
+## ✨ Tính năng
 
-#### 📱 Cảm ứng đa điểm
-- Hai ngón tay: Tùy chọn (mặc định: Dịch popup)
-- Ba ngón tay: Tùy chọn (mặc định: Dịch nâng cao)
-- Bốn ngón tay: Mở cài đặt giao diện người dùng
-- Năm ngón tay: Bật/tắt Tools dịch (nút quản lý tất cả chế độ dịch)
-- Độ nhạy có thể điều chỉnh (mặc định: 100ms)
+### 📝 Dịch Văn Bản
+- Dịch nhanh khi bôi đen văn bản
+- Dịch popup với giao diện đẹp
+- Dịch nâng cao với phân tích từ vựng
+- Tự động dịch trong ô nhập liệu
 
-#### 💻 Context Menu dịch:
-   - Khi người dùng chuột phải vào một đoạn văn bản đã chọn, sẽ hiện ra menu ngữ cảnh để dịch.
-   - Menu ngữ cảnh cung cấp 3 tùy chọn: Dịch nhanh, Dịch popup và Dịch nâng cao.
-   - Khi chọn một tùy chọn, Translator sẽ thực hiện dịch đoạn văn bản đã chọn theo tùy chọn đó.
+### 🖼️ Dịch Hình Ảnh (OCR)
+- Dịch file ảnh từ máy tính
+- Chụp và dịch màn hình
+- Dịch ảnh trên web
+- Dịch manga với overlay text
 
+### 🎵 Dịch Media
+- Hỗ trợ file audio (MP3, WAV, OGG,...)
+- Hỗ trợ file video (MP4, WEBM,...)
+- Tự động tạo phụ đề SRT
 
-### 🌐 Dịch trang web nâng cao
-- Tự động phát hiện ngôn ngữ của trang web và dịch toàn bộ nội dung sang tiếng Việt.
-- Cho phép loại trừ các phần tử không cần dịch.
-- Hiển thị nút dịch trang tạm thời.
+### 🌐 Dịch Trang Web
+- Dịch toàn bộ trang web
+- Tự động nhận diện ngôn ngữ
+- Dịch file HTML và PDF
+- Tùy chọn loại trừ elements
 
-### 🎵 Dịch Media (Audio/Video)
-- Hỗ trợ dịch nội dung audio và video.
-- Hỗ trợ nhiều định dạng phổ biến.
-- Giới hạn kích thước file media tối đa.
+## 🔧 Cài đặt
 
-### 📷 Dịch OCR Nâng cao
-- Hỗ trợ nhiều định dạng ảnh phổ biến.
-- Tự động chụp màn hình và dịch.
-- Độ chính xác cao nhờ phân tích bố cục và xử lý thông minh.
+### Yêu cầu
+- Trình duyệt: Chrome, Firefox, Edge,...
+- Extension: [Violentmonkey](https://violentmonkey.github.io/) hoặc [Tampermonkey](https://www.tampermonkey.net/)
+- API Key: [Google Gemini](https://makersuite.google.com/app/apikey)
 
-### Dịch file PDF
+### Các bước cài đặt
 
-### Dịch file HTML
+1. **Cài đặt Extension**
+   - Cài đặt Violentmonkey hoặc Tampermonkey từ store của trình duyệt
 
-### ⚙️ Quản lý Cài đặt Nâng Cao
-- Giao diện cài đặt mới với Dark/Light mode.
-- Hỗ trợ xuất/nhập cài đặt dạng JSON.
-- Phân nhóm các tùy chỉnh theo chức năng.
+2. **Cài đặt Script**
+   - Phiên bản bình thường: [Github](https://github.com/king1x32/UserScripts/raw/refs/heads/main/Gemini_AI_Translator.user.js) hoặc [Greasyfork](https://greasyfork.org/vi/scripts/529348-gemini-ai-translator-inline-popup?locale_override=1)
+   - Phiên bản nén (nhẹ hơn, mượt hơn): [Github](https://raw.githubusercontent.com/king1x32/compiledUserscripts/release/release/Gemini20AI20Translator2028Inline2020Popup29.user.js)
 
-### 🤖 Model AI Cải Tiến
-- Hỗ trợ nhiều model Gemini khác nhau: Fast, Pro, Vision, Custom.
-- Tùy chỉnh linh hoạt các thông số như Temperature, Top P, Top K.
+3. **Cấu hình API**
+   - Mở cài đặt (menu ở biểu tượng Violentmonkey, Alt + S, chạm 4 ngón)
+   - Chọn provider: Gemini
+   - Nhập API key
+   - Lưu cài đặt
 
-### 🔍 Phím tắt và Tương tác
-- Phím tắt để truy cập nhanh các tính năng thường dùng.
-- Tùy chỉnh hành động của nút dịch (nhấp đơn, nhấp đúp, giữ).
-- Hỗ trợ cảm ứng đa điểm trên thiết bị di động.
+## 📚 Hướng dẫn sử dụng
 
-### 🔍 Tối ưu Hiệu Suất
-- Sử dụng đa luồng API để xử lý nhiều yêu cầu đồng thời.
-- Quản lý rate limit để tránh vượt quá giới hạn API.
-- Hệ thống cache mạnh mẽ cho văn bản, ảnh và media.
+### Dịch Văn Bản
+1. Bôi đen văn bản cần dịch
+2. Chọn kiểu dịch:
+   - Click đơn: Dịch nhanh
+   - Click đúp: Dịch popup
+   - Giữ click: Dịch nâng cao
 
-## 💻 Yêu cầu hệ thống
-- Trình duyệt: Chrome 80+, Firefox 72+, Edge 80+
-- Extension: Violentmonkey/Tampermonkey
-- API Key: Gemini AI
-- RAM: 2GB+
-- Ổ cứng trống: 500MB+
+### Dịch Trong Input
+- 🌐 : Dịch sang ngôn ngữ đích
+- 🔄 : Dịch sang ngôn ngữ nguồn
+- Alt + T: Dịch nhanh
 
-## 📥 Cài đặt & Sử dụng
-1. Cài đặt Violentmonkey từ store trình duyệt
-2. Cài đặt script:
-    - Phiên bản bình thường: [Github](https://github.com/king1x32/UserScripts/raw/refs/heads/main/Gemini_AI_Translator_(Inline&Popup).user.js) or [Greasyfork](https://greasyfork.org/vi/scripts/529348-gemini-ai-translator-inline-popup?locale_override=1)
-    - Phiên bản nén (nhẹ hơn, mượt hơn): [Github](https://raw.githubusercontent.com/king1x32/compiledUserscripts/release/release/Gemini20AI20Translator2028Inline2020Popup29.user.js)
-3. Đăng ký và lấy API Key của Gemini
-4. Cấu hình API Key trong phần cài đặt (Alt + S)
-5. Khởi động lại trình duyệt
+### Tools Dịch
+Click "Tools Dịch" góc phải màn hình:
+- Dịch Trang
+- Dịch Ảnh/OCR
+- Dịch Media
+- Dịch File
 
-## 📊 Thông số kỹ thuật
-| Tính năng | Thông số |
-|-----------|----------|
-| Cache Text | 100 entries/5m |
-| Cache Image | 50 entries/30m |
-| Cache Media | 50 entries/30m |
-| Audio Limit | 100MB |
-| Video Limit | 200MB |
-| OCR Limit | 15MB |
-| Rate Limit | 5 req/10s |
+## ⌨️ Phím tắt
 
-## ⚠️ Lưu ý quan trọng
-- Backup cài đặt thường xuyên
-- Không chia sẻ API key
-- Cache tự động clear sau mỗi phiên
-- Kiểm tra rate limit khi dịch nhiều
-- Tối ưu cấu hình cho hiệu suất tốt nhất
+| Phím tắt | Chức năng |
+|----------|-----------|
+| Alt + F | Dịch trang |
+| Alt + Q | Dịch nhanh |
+| Alt + E | Dịch popup |
+| Alt + A | Dịch nâng cao |
+| Alt + T | Dịch input |
+| Alt + S | Mở cài đặt |
 
-## 📈 So sánh với v3.2
+## 📱 Cảm ứng (Mobile)
 
-### ✨ Tính năng mới
-- Quản lý API key linh hoạt, có thể thêm/xóa nhiều key, đa luồng xử lý
-- Tính năng dịch trang web nâng cao
-- Hỗ trợ dịch media (audio/video)
-- Giao diện cài đặt mới với Dark/Light mode
-- Tùy chỉnh model Gemini (Fast, Pro, Vision, Custom)
-- Phím tắt và tương tác nâng cao (nút dịch, cảm ứng đa điểm)
-- Tối ưu hóa hiệu suất và khả năng mở rộng
+| Thao tác | Chức năng |
+|----------|-----------|
+| 2 ngón | Dịch popup |
+| 3 ngón | Dịch nâng cao |
+| 4 ngón | Mở cài đặt |
+| 5 ngón | Bật/tắt Tools |
 
-### 🔄 Cải tiến
-- Giao diện cài đặt trực quan và dễ sử dụng hơn
-- Tùy biến model AI linh hoạt hơn
-- Tăng độ ổn định và xử lý lỗi tốt hơn
-- Hệ thống cache mạnh mẽ hơn
+## ⚙️ Cấu hình
 
-## 📞 Liên hệ & Đóng góp
-- 🐛 Báo lỗi: [Voz](https://voz.vn/t/script-dung-ai-%C4%91e-dich-moi-thu-text-anh-audio-video.1072947/) hoặc [GitHub Issues](https://github.com/king1x32/UserScripts/issues)
-- 💡 Góp ý: [Voz](https://voz.vn/t/script-dung-ai-%C4%91e-dich-moi-thu-text-anh-audio-video.1072947/) hoặc [GitHub Discussions](https://github.com/king1x32/UserScripts/discussions)
-- 📧 Email: nguyenhuuvuong12@mail.com
-- 💬 Discord: [Join](https://discord.gg/CywqJTph)
+### Giao diện
+- Theme sáng/tối
+- Font size
+- Vị trí nút dịch
+
+### API & Models
+- Provider: Gemini AI
+- API Keys
+- Lựa chọn model
+
+### Tùy chỉnh
+- Prompt dịch
+- Phím tắt
+- Cache
+- Sao lưu/Khôi phục
+
+## ❗ Lưu ý
+
+- Cần API key Gemini
+- Giới hạn 5 request/10s
+- Cache tăng tốc độ dịch
+- Hỗ trợ dịch offline với cache
+- Tự động phát hiện ngôn ngữ
+- Hỗ trợ nhiều ngôn ngữ
+
+## 🤝 Đóng góp
+
+Mọi đóng góp đều được chào đón! Hãy:
+1. Fork project
+2. Tạo branch mới
+3. Commit changes
+4. Push to branch
+5. Tạo Pull Request
+
+## Donate? Muốn hỗ trợ mình 1 ly cà phê
+  > Hãy truy cập liên kết chứa thông tin Donate sau: https://kingsmanvn.pages.dev
+
+## 📄 Giấy phép
+
+Dự án này được phân phối dưới giấy phép GNU General Public License v3.0. Xem `LICENSE` để biết thêm chi tiết.
 
 ---
 
-> 💡 **Tip**: Sử dụng phím tắt để truy cập nhanh các tính năng thường dùng và tùy chỉnh cài đặt theo nhu cầu để có trải nghiệm tốt nhất.
-
-Phiên bản 4.1 của Gemini AI Translator mang đến nhiều tính năng mới và cải tiến, dịch trang web nâng cao, dịch media, giao diện cài đặt mới, tùy chỉnh model AI, phím tắt và tương tác nâng cao, cũng như tối ưu hóa hiệu suất. Đây là một bản nâng cấp đáng giá cho người dùng cần trải nghiệm dịch thuật toàn diện và hiệu quả.
+<div align="center">
+  Made with ❤️ by King1x32
+  <br>
+  <a href="https://github.com/king1x32">GitHub</a> •
+  <a href="https://discord.gg/v2DsBW6d">Discord</a> •
+  <a href="https://t.me/king1x32">Telegram</a>
+</div>

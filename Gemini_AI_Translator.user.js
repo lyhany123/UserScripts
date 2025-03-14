@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name         Gemini AI Translator (Inline & Popup)
 // @namespace    Gemini AI Translator (Inline & Popup)
-// @version      4.1
+// @version      4.2
 // @author       King1x32
 // @icon         https://raw.githubusercontent.com/king1x32/UserScripts/refs/heads/main/kings.jpg
-// @description  Dịch văn bản (bôi đen văn bản), hình ảnh, audio, video bằng Google Gemini API. Hỗ trợ popup phân tích từ vựng, popup dịch và dịch nhanh.
+// @description  Dịch văn bản (bôi đen văn bản, khi nhập văn bản), hình ảnh, audio, video bằng Google Gemini API. Hỗ trợ popup phân tích từ vựng, popup dịch và dịch nhanh.
 // @match        *://*/*
 // @match        file:///*
 // @grant        GM_xmlhttpRequest
@@ -12,11 +12,13 @@
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        GM_registerMenuCommand
+// @connect      api.gemini.com
 // @require      https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js
 // @require      https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js
 // @require      https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js
-// @downloadURL  https://raw.githubusercontent.com/king1x32/UserScripts/refs/heads/main/Gemini_AI_Translator_(Inline&Popup).user.js
-// @updateURL    https://raw.githubusercontent.com/king1x32/UserScripts/refs/heads/main/Gemini_AI_Translator_(Inline&Popup).user.js
+// @homepageURL  https://github.com/king1x32/UserScripts
+// @downloadURL  https://raw.githubusercontent.com/king1x32/UserScripts/refs/heads/main/Gemini_AI_Translator.user.js
+// @updateURL    https://raw.githubusercontent.com/king1x32/UserScripts/refs/heads/main/Gemini_AI_Translator.user.js
 // ==/UserScript==
 (function() {
   "use strict";
@@ -73,12 +75,8 @@
       },
       currentProvider: "gemini",
       apiKey: {
-        gemini: [
-          "", // Default key
-        ],
-        openai: [
-          "", // Default key
-        ],
+        gemini: [""],
+        openai: [""],
       },
       currentKeyIndex: {
         gemini: 0,
@@ -90,8 +88,8 @@
     OCR: {
       generation: {
         temperature: 0.2,
-        topP: 0.9,
-        topK: 50,
+        topP: 0.7,
+        topK: 20,
       },
       maxFileSize: 15 * 1024 * 1024, // 15MB
       supportedFormats: [
@@ -105,8 +103,8 @@
     MEDIA: {
       generation: {
         temperature: 0.2,
-        topP: 0.9,
-        topK: 50,
+        topP: 0.7,
+        topK: 20,
       },
       audio: {
         maxSize: 100 * 1024 * 1024, // 100MB
@@ -141,32 +139,53 @@
       },
     },
     contextMenu: {
-      enabled: true
+      enabled: true,
     },
     pageTranslation: {
       enabled: true, // Bật/tắt tính năng
       autoTranslate: true,
       showInitialButton: true, // Hiện nút dịch ban đầu
       buttonTimeout: 10000, // Thời gian hiển thị nút (10 giây)
-      excludeSelectors: [
+      useCustomSelectors: false,
+      customSelectors: [],
+      defaultSelectors: [
         "script",
-        "style",
-        "noscript",
-        "iframe",
         "code",
-        "pre",
-        ".translator-tools-container",
-        ".translator-notification",
-        ".center-translate-status",
-        ".page-translate-button",
-        "[contenteditable='true']",
+        "style",
         "input",
-        "textarea",
         "button",
+        "textarea",
+        ".notranslate",
+        ".translator-settings-container",
+        ".translator-tools-container",
+        ".translation-div",
+        ".draggable",
+        ".page-translate-button",
+        ".translator-tools-dropdown",
+        ".translator-notification",
+        ".translator-content",
+        ".translator-context-menu",
+        ".translator-overlay",
+        ".translator-guide",
+        ".center-translate-status",
         ".no-translate",
         "[data-notranslate]",
         "[translate='no']",
+        ".html5-player-chrome",
+        ".html5-video-player",
       ],
+    },
+    promptSettings: {
+      enabled: true,
+      customPrompts: {
+        normal: "",
+        advanced: "",
+        chinese: "",
+        ocr: "",
+        media: "",
+        page: "",
+      },
+      useCustom: false,
     },
     CACHE: {
       text: {
@@ -174,11 +193,11 @@
         expirationTime: 300000, // 5 phút
       },
       image: {
-        maxSize: 50, // Tối đa 50 entries cho ảnh
+        maxSize: 25, // Tối đa 25 entries cho ảnh
         expirationTime: 1800000, // 30 phút
       },
       media: {
-        maxSize: 50, // Số lượng media được cache tối đa
+        maxSize: 25, // Số lượng media được cache tối đa
         expirationTime: 1800000, // 30 phút
       },
     },
@@ -189,10 +208,10 @@
     THEME: {
       mode: "dark",
       light: {
-        background: "#ddd",
-        text: "#333",
+        background: "#cccccc",
+        text: "#333333",
         border: "#bbb",
-        title: "#333",
+        title: "#222222",
         content: "#555",
         button: {
           close: { background: "#ff4444", text: "#ddd" },
@@ -200,10 +219,10 @@
         },
       },
       dark: {
-        background: "#222",
-        text: "#ddd",
-        border: "#444",
-        title: "#ddd",
+        background: "#333333",
+        text: "#cccccc",
+        border: "#5555",
+        title: "#eeeeee",
         content: "#bbb",
         button: {
           close: { background: "#aa2222", text: "#ddd" },
@@ -226,7 +245,7 @@
         position: "fixed",
         border: "1px solid",
         padding: "20px",
-        zIndex: "2147483647",
+        zIndex: "2147483647 !important",
         maxWidth: "90vw",
         minWidth: "300px",
         maxHeight: "80vh",
@@ -247,7 +266,7 @@
         borderRadius: "3px",
         padding: "5px 10px",
         cursor: "pointer",
-        zIndex: "2147483647",
+        zIndex: "2147483647 !important",
         fontSize: "14px",
       },
       dragHandle: {
@@ -267,12 +286,8 @@
     theme: CONFIG.THEME.mode,
     apiProvider: CONFIG.API.currentProvider,
     apiKey: {
-      gemini: [
-        "", // Default key
-      ],
-      openai: [
-        "", // Default key
-      ],
+      gemini: [""],
+      openai: [""],
     },
     currentKeyIndex: {
       gemini: 0,
@@ -286,31 +301,62 @@
       customModel: "",
     },
     contextMenu: {
-      enabled: true
+      enabled: true,
+    },
+    promptSettings: {
+      enabled: true,
+      customPrompts: {
+        normal: "",
+        advanced: "",
+        chinese: "",
+        ocr: "",
+        media: "",
+        page: "",
+      },
+      useCustom: false,
+    },
+    inputTranslation: {
+      enabled: true,
+      shortcut: {
+        key: "t",
+        altKey: true,
+      },
+      buttonPosition: "auto", // 'left', 'right', 'bottom'
+      showForSearchBoxes: true,
+      excludeSelectors: [], // Selectors để loại trừ
     },
     pageTranslation: {
-      enabled: true, // Bật/tắt tính năng
+      enabled: true,
       autoTranslate: true,
       showInitialButton: true, // Hiện nút dịch ban đầu
       buttonTimeout: 10000, // Thời gian hiển thị nút (10 giây)
-      excludeSelectors: [
+      useCustomSelectors: false,
+      customSelectors: [],
+      defaultSelectors: [
         "script",
-        "style",
-        "noscript",
-        "iframe",
         "code",
-        "pre",
-        ".translator-tools-container",
-        ".translator-notification",
-        ".center-translate-status",
-        ".page-translate-button",
-        "[contenteditable='true']",
+        "style",
         "input",
-        "textarea",
         "button",
+        "textarea",
+        ".notranslate",
+        ".translator-settings-container",
+        ".translator-tools-container",
+        ".translation-div",
+        ".draggable",
+        ".page-translate-button",
+        ".translator-tools-dropdown",
+        ".translator-notification",
+        ".translator-content",
+        ".translator-context-menu",
+        ".translator-overlay",
+        ".translator-guide",
+        ".center-translate-status",
         ".no-translate",
         "[data-notranslate]",
         "[translate='no']",
+        ".html5-player-chrome",
+        ".html5-video-player",
       ],
     },
     ocrOptions: {
@@ -338,10 +384,20 @@
       },
     },
     displayOptions: {
-      showOriginalText: true,
       fontSize: "16px",
       minPopupWidth: "300px",
       maxPopupWidth: "90vw",
+      webImageTranslation: {
+        fontSize: "9px", // Font size mặc định
+        minFontSize: "8px",
+        maxFontSize: "16px",
+      },
+      translationMode: "parallel", // 'translation_only', 'parallel' hoặc 'language_learning'
+      sourceLanguage: "auto", // 'auto' hoặc 'zh','en','vi',...
+      targetLanguage: "vi", // 'vi', 'en', 'zh', 'ko', 'ja',...
+      languageLearning: {
+        showSource: true,
+      },
     },
     shortcuts: {
       settingsEnabled: true,
@@ -391,8 +447,9 @@
       this.queue = [];
       this.processing = false;
       this.retryDelays = [1000, 2000, 4000];
+      this.batchSize = 6; // Số api đa luồng
+      this.batchDelay = 100;
     }
-
     async optimizeRequest(request) {
       const priority = this.calculatePriority(request);
       const optimizedRequest = {
@@ -401,17 +458,33 @@
         retries: 0,
         timestamp: Date.now(),
       };
-
       this.queue.push(optimizedRequest);
       if (!this.processing) {
         this.processQueue();
       }
     }
-
-    calculatePriority(request) {
-      return request.urgent ? 1 : 0;
+    async batchRequests(requests) {
+      const batches = [];
+      for (let i = 0; i < requests.length; i += this.batchSize) {
+        batches.push(requests.slice(i, i + this.batchSize));
+      }
+      const results = [];
+      for (const batch of batches) {
+        const batchResults = await Promise.all(
+          batch.map((req) => this.executeRequest(req))
+        );
+        results.push(...batchResults);
+        if (batches.indexOf(batch) < batches.length - 1) {
+          await new Promise((resolve) => setTimeout(resolve, this.batchDelay));
+        }
+      }
+      return results;
     }
-
+    calculatePriority(request) {
+      if (request.urgent) return 3;
+      if (request.type === "translation") return 2;
+      return 1;
+    }
     async processQueue() {
       this.processing = true;
       while (this.queue.length > 0) {
@@ -420,19 +493,21 @@
       }
       this.processing = false;
     }
-
     createBatch() {
-      return this.queue.sort((a, b) => b.priority - a.priority).slice(0, 5);
+      return this.queue
+        .sort((a, b) => b.priority - a.priority)
+        .slice(0, this.batchSize);
     }
-
     async processBatch(batch) {
       try {
-        await Promise.all(batch.map((request) => this.executeRequest(request)));
+        const results = await this.batchRequests(batch);
+        this.queue = this.queue.filter((req) => !batch.includes(req));
+        return results;
       } catch (error) {
         console.error("Batch processing error:", error);
+        throw error;
       }
     }
-
     async executeRequest(request) {
       try {
         const response = await fetch(request.url, request.options);
@@ -443,7 +518,7 @@
       } catch (error) {
         if (request.retries < this.retryDelays.length) {
           await new Promise((resolve) =>
-            setTimeout(resolve, this.retryDelays[request.retries]),
+            setTimeout(resolve, this.retryDelays[request.retries])
           );
           request.retries++;
           return this.executeRequest(request);
@@ -460,13 +535,11 @@
         this.optimizeForMobile();
       }
     }
-
     optimizeForMobile() {
       this.reduceDOMOperations();
       this.optimizeTouchHandling();
       this.adjustUIForMobile();
     }
-
     reduceDOMOperations() {
       const observer = new MutationObserver((mutations) => {
         requestAnimationFrame(() => {
@@ -477,32 +550,27 @@
           });
         });
       });
-
       observer.observe(document.body, {
         childList: true,
         subtree: true,
       });
     }
-
     optimizeTouchHandling() {
       let touchStartY = 0;
       let touchStartX = 0;
-
       document.addEventListener(
         "touchstart",
         (e) => {
           touchStartY = e.touches[0].clientY;
           touchStartX = e.touches[0].clientX;
         },
-        { passive: true },
+        { passive: true }
       );
-
       document.addEventListener(
         "touchmove",
         (e) => {
           const touchY = e.touches[0].clientY;
           const touchX = e.touches[0].clientX;
-
           if (
             Math.abs(touchY - touchStartY) > 10 ||
             Math.abs(touchX - touchStartX) > 10
@@ -510,33 +578,28 @@
             this.ui.removeTranslateButton();
           }
         },
-        { passive: true },
+        { passive: true }
       );
     }
-
     adjustUIForMobile() {
       const style = document.createElement("style");
       style.textContent = `
       .translator-tools-container {
-        bottom: 10px !important;
-        right: 10px !important;
+        bottom: 20px !important;
+        right: 20px !important;
       }
-
       .translator-tools-button {
         padding: 8px 15px !important;
         font-size: 14px !important;
       }
-
       .translator-tools-dropdown {
         width: 250px !important;
         max-height: 60vh !important;
         overflow-y: auto !important;
       }
-
       .translator-tools-item {
         padding: 10px !important;
       }
-
       .draggable {
         max-width: 95vw !important;
         max-height: 80vh !important;
@@ -544,7 +607,6 @@
     `;
       document.head.appendChild(style);
     }
-
     optimizeAddedNodes(nodes) {
       nodes.forEach((node) => {
         if (node.nodeType === Node.ELEMENT_NODE) {
@@ -556,6 +618,22 @@
       });
     }
   }
+  const bypassCSP = () => {
+    const style = document.createElement("style");
+    style.textContent = `
+    .translator-tools-container {
+      position: fixed !important;
+      bottom: 20px !important;
+      right: 20px !important;
+      z-index: 2147483646 !important;
+      font-family: Arial, sans-serif !important;
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+  `;
+    document.head.appendChild(style);
+  };
   class UserSettings {
     constructor(translator) {
       this.translator = translator;
@@ -584,7 +662,7 @@
         color: ${isDark ? "#ddd" : "#333"};
         padding: 20px;
         border-radius: 10px;
-        z-index: 2147483647;
+        z-index: 2147483647 !important;
         width: auto;
         max-width: 90vw;
         min-width: 400px;
@@ -768,6 +846,19 @@
             min-width: 60px !important;
             max-width: 100px !important;
         }
+        .prompt-textarea {
+          width: 100%;
+          min-height: 100px;
+          margin: 5px 0;
+          padding: 8px;
+          background: ${isDark ? "#444" : "#fff"};
+          color: ${isDark ? "#fff" : "#000"};
+          border: 1px solid ${isDark ? "#666" : "#ccc"};
+          border-radius: 4px;
+          font-family: monospace;
+          font-size: 13px;
+          resize: vertical;
+        }
     `;
       const styleElement = document.createElement("style");
       styleElement.textContent = resetStyle;
@@ -797,8 +888,7 @@
       <span>Gemini</span>
     </label>
     <label>
-      <input type="radio" name="apiProvider" value="openai" ${this.settings.apiProvider === "openai" ? "checked" : ""
-        }>
+      <input type="radio" name="apiProvider" value="openai" disabled>
       <span>OpenAI</span>
     </label>
   </div>
@@ -814,10 +904,10 @@
         <div class="api-key-entry" style="display: flex; gap: 10px; margin-bottom: 5px;">
           <input type="text" class="gemini-key" value="${key}" style="flex: 1; width: 100%;">
           <button class="remove-key" data-provider="gemini" data-index="${this.settings.apiKey.gemini.indexOf(
-              key,
+              key
             )}" style="background: #ff4444;">×</button>
         </div>
-      `,
+      `
           )
           .join("")}
     </div>
@@ -832,10 +922,10 @@
         <div class="api-key-entry" style="display: flex; gap: 10px; margin-bottom: 5px;">
           <input type="text" class="openai-key" value="${key}" style="flex: 1; width: 100%;">
           <button class="remove-key" data-provider="openai" data-index="${this.settings.apiKey.openai.indexOf(
-              key,
+              key
             )}" style="background: #ff4444;">×</button>
         </div>
-      `,
+      `
           )
           .join("")}
     </div>
@@ -868,7 +958,7 @@
             (model) => `
       <option value="${model}" ${this.settings.geminiOptions?.fastModel === model ? "selected" : ""
               }>${model}</option>
-      `,
+      `
           )
           .join("")}
     </select>
@@ -884,7 +974,7 @@
             (model) => `
       <option value="${model}" ${this.settings.geminiOptions?.proModel === model ? "selected" : ""
               }>${model}</option>
-      `,
+      `
           )
           .join("")}
     </select>
@@ -900,7 +990,7 @@
             (model) => `
       <option value="${model}" ${this.settings.geminiOptions?.visionModel === model ? "selected" : ""
               }>${model}</option>
-      `,
+      `
           )
           .join("")}
     </select>
@@ -916,9 +1006,17 @@
   </div>
 </div>
 <div style="margin-bottom: 15px;">
+    <h3>DỊCH KHI VIẾT</h3>
+    <div class="settings-grid">
+        <span class="settings-label">Bật tính năng:</span>
+        <input type="checkbox" id="inputTranslationEnabled"
+            ${this.settings.inputTranslation?.enabled ? "checked" : ""}>
+    </div>
+</div>
+<div style="margin-bottom: 15px;">
   <h3>TOOLS DỊCH</h3>
   <div class="settings-grid">
-    <span class="settings-label">Hiển thị Tools dịch (OCR + MEDIA):</span>
+    <span class="settings-label">Hiển thị Tools dịch (PAGE + OCR + MEDIA):</span>
     <input type="checkbox" id="showTranslatorTools"
       ${localStorage.getItem("translatorToolsEnabled") === "true"
           ? "checked"
@@ -939,27 +1037,153 @@
         }>
   </div>
   <div class="settings-grid">
-    <span class="settings-label">Tự động dịch trang không phải tiếng Việt:</span>
+    <span class="settings-label">Tự động dịch trang:</span>
     <input type="checkbox" id="autoTranslatePage" ${this.settings.pageTranslation?.autoTranslate ? "checked" : ""
         }>
   </div>
-  <div class="settings-grid" style="align-items: start !important;">
-    <span class="settings-label">Bỏ qua các elements (CSS selectors):</span>
-    <div style="flex: 1;">
-      <textarea id="excludeSelectors"
-        style="width: 100%; min-height: 100px; margin: 5px 0; padding: 8px;
-        background: ${isDark ? "#444" : "#fff"};
-        color: ${isDark ? "#fff" : "#000"};
-        border: 1px solid ${isDark ? "#666" : "#ccc"};
-        border-radius: 4px;
-        font-family: monospace;
-        font-size: 13px;"
-      >${this.settings.pageTranslation?.excludeSelectors?.join("\n") || ""
+  <div class="settings-grid">
+    <span class="settings-label">Tùy chỉnh Selectors loại trừ:</span>
+    <input type="checkbox" id="useCustomSelectors" ${this.settings.pageTranslation?.useCustomSelectors ? "checked" : ""
+        }>
+  </div>
+  <div id="selectorsSettings" style="display: ${this.settings.pageTranslation?.useCustomSelectors ? "block" : "none"
+        }">
+    <div class="settings-grid" style="align-items: start !important;">
+      <span class="settings-label">Selectors loại trừ:</span>
+      <div style="flex: 1;">
+        <textarea id="customSelectors"
+          style="width: 100%; min-height: 100px; margin: 5px 0; padding: 8px;
+          background: ${isDark ? "#444" : "#fff"};
+          color: ${isDark ? "#fff" : "#000"};
+          border: 1px solid ${isDark ? "#666" : "#ccc"};
+          border-radius: 4px;
+          font-family: monospace;
+          font-size: 13px;"
+        >${this.settings.pageTranslation?.customSelectors?.join("\n") || ""
         }</textarea>
-      <div style="font-size: 12px; color: ${isDark ? "#999" : "#666"
+        <div style="font-size: 12px; color: ${isDark ? "#999" : "#666"
         }; margin-top: 4px;">
-        Hãy nhập mỗi selector một dòng!
+          Hãy nhập mỗi selector một dòng!
+        </div>
       </div>
+    </div>
+    <div class="settings-grid" style="align-items: start !important;">
+      <span class="settings-label">Selectors mặc định:</span>
+      <div style="flex: 1;">
+        <textarea id="defaultSelectors" readonly
+          style="width: 100%; min-height: 100px; margin: 5px 0; padding: 8px;
+          background: ${isDark ? "#333" : "#f5f5f5"};
+          color: ${isDark ? "#999" : "#666"};
+          border: 1px solid ${isDark ? "#555" : "#ddd"};
+          border-radius: 4px;
+          font-family: monospace;
+          font-size: 13px;"
+        >${this.settings.pageTranslation?.defaultSelectors?.join("\n") || ""
+        }</textarea>
+        <div style="font-size: 12px; color: ${isDark ? "#999" : "#666"
+        }; margin-top: 4px;">
+          Đây là danh sách selectors mặc định sẽ được sử dụng khi tắt tùy chỉnh.
+        </div>
+      </div>
+    </div>
+    <div class="settings-grid">
+      <span class="settings-label">Kết hợp với mặc định:</span>
+      <input type="checkbox" id="combineWithDefault" ${this.settings.pageTranslation?.combineWithDefault ? "checked" : ""
+        }>
+      <div style="font-size: 12px; color: ${isDark ? "#999" : "#666"
+        }; margin-top: 4px; grid-column: 2;">
+        Nếu bật, selectors tùy chỉnh sẽ được thêm vào danh sách mặc định thay vì thay thế hoàn toàn.
+      </div>
+    </div>
+  </div>
+</div>
+<div style="margin-bottom: 15px;">
+  <h3>TÙY CHỈNH PROMPT</h3>
+  <div class="settings-grid">
+    <span class="settings-label">Sử dụng prompt tùy chỉnh:</span>
+    <input type="checkbox" id="useCustomPrompt" ${this.settings.promptSettings?.useCustom ? "checked" : ""
+        }>
+  </div>
+  <div id="promptSettings" style="display: ${this.settings.promptSettings?.useCustom ? "block" : "none"
+        }">
+    <!-- Normal prompts -->
+    <div class="settings-grid" style="align-items: start !important;">
+      <span class="settings-label">Prompt dịch thường (nhanh + popup):</span>
+      <textarea id="normalPrompt" class="prompt-textarea"
+        placeholder="Nhập prompt cho dịch thường..."
+      >${this.settings.promptSettings?.customPrompts?.normal || ""}</textarea>
+    </div>
+    <div class="settings-grid" style="align-items: start !important;">
+      <span class="settings-label">Prompt dịch thường (nhanh + popup)(Chinese):</span>
+      <textarea id="normalPrompt_chinese" class="prompt-textarea"
+        placeholder="Nhập prompt cho dịch thường với pinyin..."
+      >${this.settings.promptSettings?.customPrompts?.normal_chinese || ""
+        }</textarea>
+    </div>
+    <!-- Advanced prompts -->
+    <div class="settings-grid" style="align-items: start !important;">
+      <span class="settings-label">Prompt dịch nâng cao:</span>
+      <textarea id="advancedPrompt" class="prompt-textarea"
+        placeholder="Nhập prompt cho dịch nâng cao..."
+      >${this.settings.promptSettings?.customPrompts?.advanced || ""}</textarea>
+    </div>
+    <div class="settings-grid" style="align-items: start !important;">
+      <span class="settings-label">Prompt dịch nâng cao (Chinese):</span>
+      <textarea id="advancedPrompt_chinese" class="prompt-textarea"
+        placeholder="Nhập prompt cho dịch nâng cao với pinyin..."
+      >${this.settings.promptSettings?.customPrompts?.advanced_chinese || ""
+        }</textarea>
+    </div>
+    <!-- OCR prompts -->
+    <div class="settings-grid" style="align-items: start !important;">
+      <span class="settings-label">Prompt OCR:</span>
+      <textarea id="ocrPrompt" class="prompt-textarea"
+        placeholder="Nhập prompt cho OCR..."
+      >${this.settings.promptSettings?.customPrompts?.ocr || ""}</textarea>
+    </div>
+    <div class="settings-grid" style="align-items: start !important;">
+      <span class="settings-label">Prompt OCR (Chinese):</span>
+      <textarea id="ocrPrompt_chinese" class="prompt-textarea"
+        placeholder="Nhập prompt cho OCR với pinyin..."
+      >${this.settings.promptSettings?.customPrompts?.ocr_chinese || ""
+        }</textarea>
+    </div>
+    <!-- Media prompts -->
+    <div class="settings-grid" style="align-items: start !important;">
+      <span class="settings-label">Prompt Media:</span>
+      <textarea id="mediaPrompt" class="prompt-textarea"
+        placeholder="Nhập prompt cho media..."
+      >${this.settings.promptSettings?.customPrompts?.media || ""}</textarea>
+    </div>
+    <div class="settings-grid" style="align-items: start !important;">
+      <span class="settings-label">Prompt Media (Chinese):</span>
+      <textarea id="mediaPrompt_chinese" class="prompt-textarea"
+        placeholder="Nhập prompt cho media với pinyin..."
+      >${this.settings.promptSettings?.customPrompts?.media_chinese || ""
+        }</textarea>
+    </div>
+    <!-- Page prompts -->
+    <div class="settings-grid" style="align-items: start !important;">
+      <span class="settings-label">Prompt dịch trang:</span>
+      <textarea id="pagePrompt" class="prompt-textarea"
+        placeholder="Nhập prompt cho dịch trang..."
+      >${this.settings.promptSettings?.customPrompts?.page || ""}</textarea>
+    </div>
+    <div class="settings-grid" style="align-items: start !important;">
+      <span class="settings-label">Prompt dịch trang (Chinese):</span>
+      <textarea id="pagePrompt_chinese" class="prompt-textarea"
+        placeholder="Nhập prompt cho dịch trang với pinyin..."
+      >${this.settings.promptSettings?.customPrompts?.page_chinese || ""
+        }</textarea>
+    </div>
+    <div style="margin-top: 10px; font-size: 12px; color: ${isDark ? "#999" : "#666"
+        };">
+      Các biến có thể sử dụng trong prompt:
+      <ul style="margin-left: 20px;">
+        <li>{text} - Văn bản cần dịch</li>
+        <li>{targetLang} - Ngôn ngữ đích</li>
+        <li>{sourceLang} - Ngôn ngữ nguồn (nếu có)</li>
+      </ul>
     </div>
   </div>
 </div>
@@ -1018,12 +1242,201 @@
 <div style="margin-bottom: 15px;">
   <h3>HIỂN THỊ</h3>
   <div class="settings-grid">
-    <span class="settings-label">Hiện văn bản gốc:</span>
-    <input type="checkbox" id="showOriginalText" ${this.settings.displayOptions?.showOriginalText ? "checked" : ""
-        }>
+    <span class="settings-label">Chế độ hiển thị:</span>
+    <select id="displayMode" class="settings-input">
+      <option value="translation_only" ${this.settings.displayOptions.translationMode === "translation_only"
+          ? "selected"
+          : ""
+        }>Chỉ hiện bản dịch</option>
+      <option value="parallel" ${this.settings.displayOptions.translationMode === "parallel"
+          ? "selected"
+          : ""
+        }>Song song văn bản gốc và bản dịch</option>
+      <option value="language_learning" ${this.settings.displayOptions.translationMode === "language_learning"
+          ? "selected"
+          : ""
+        }>Chế độ học ngôn ngữ</option>
+    </select>
   </div>
   <div class="settings-grid">
-    <span class="settings-label">Cỡ chữ:</span>
+    <span class="settings-label">Ngôn ngữ nguồn:</span>
+    <select id="sourceLanguage" class="settings-input">
+      <option value="auto" ${this.settings.displayOptions.sourceLanguage === "auto" ? "selected" : ""
+        }>Tự động nhận diện</option>
+      <option value="en" ${this.settings.displayOptions.sourceLanguage === "en" ? "selected" : ""
+        }>Tiếng Anh</option>
+      <option value="zh" ${this.settings.displayOptions.sourceLanguage === "zh" ? "selected" : ""
+        }>Tiếng Trung</option>
+      <option value="ko" ${this.settings.displayOptions.sourceLanguage === "ko" ? "selected" : ""
+        }>Tiếng Hàn</option>
+      <option value="ja" ${this.settings.displayOptions.sourceLanguage === "ja" ? "selected" : ""
+        }>Tiếng Nhật</option>
+      <option value="fr" ${this.settings.displayOptions.sourceLanguage === "fr" ? "selected" : ""
+        }>Tiếng Pháp</option>
+      <option value="de" ${this.settings.displayOptions.sourceLanguage === "de" ? "selected" : ""
+        }>Tiếng Đức</option>
+      <option value="es" ${this.settings.displayOptions.sourceLanguage === "es" ? "selected" : ""
+        }>Tiếng Tây Ban Nha</option>
+      <option value="it" ${this.settings.displayOptions.sourceLanguage === "it" ? "selected" : ""
+        }>Tiếng Ý</option>
+      <option value="pt" ${this.settings.displayOptions.sourceLanguage === "pt" ? "selected" : ""
+        }>Tiếng Bồ Đào Nha</option>
+      <option value="ru" ${this.settings.displayOptions.sourceLanguage === "ru" ? "selected" : ""
+        }>Tiếng Nga</option>
+      <option value="ar" ${this.settings.displayOptions.sourceLanguage === "ar" ? "selected" : ""
+        }>Tiếng Ả Rập</option>
+      <option value="hi" ${this.settings.displayOptions.sourceLanguage === "hi" ? "selected" : ""
+        }>Tiếng Hindi</option>
+      <option value="bn" ${this.settings.displayOptions.sourceLanguage === "bn" ? "selected" : ""
+        }>Tiếng Bengal</option>
+      <option value="id" ${this.settings.displayOptions.sourceLanguage === "id" ? "selected" : ""
+        }>Tiếng Indonesia</option>
+      <option value="ms" ${this.settings.displayOptions.sourceLanguage === "ms" ? "selected" : ""
+        }>Tiếng Malaysia</option>
+      <option value="th" ${this.settings.displayOptions.sourceLanguage === "th" ? "selected" : ""
+        }>Tiếng Thái</option>
+      <option value="tr" ${this.settings.displayOptions.sourceLanguage === "tr" ? "selected" : ""
+        }>Tiếng Thổ Nhĩ Kỳ</option>
+      <option value="nl" ${this.settings.displayOptions.sourceLanguage === "nl" ? "selected" : ""
+        }>Tiếng Hà Lan</option>
+      <option value="pl" ${this.settings.displayOptions.sourceLanguage === "pl" ? "selected" : ""
+        }>Tiếng Ba Lan</option>
+      <option value="uk" ${this.settings.displayOptions.sourceLanguage === "uk" ? "selected" : ""
+        }>Tiếng Ukraine</option>
+      <option value="el" ${this.settings.displayOptions.sourceLanguage === "el" ? "selected" : ""
+        }>Tiếng Hy Lạp</option>
+      <option value="cs" ${this.settings.displayOptions.sourceLanguage === "cs" ? "selected" : ""
+        }>Tiếng Séc</option>
+      <option value="da" ${this.settings.displayOptions.sourceLanguage === "da" ? "selected" : ""
+        }>Tiếng Đan Mạch</option>
+      <option value="fi" ${this.settings.displayOptions.sourceLanguage === "fi" ? "selected" : ""
+        }>Tiếng Phần Lan</option>
+      <option value="he" ${this.settings.displayOptions.sourceLanguage === "he" ? "selected" : ""
+        }>Tiếng Do Thái</option>
+      <option value="hu" ${this.settings.displayOptions.sourceLanguage === "hu" ? "selected" : ""
+        }>Tiếng Hungary</option>
+      <option value="no" ${this.settings.displayOptions.sourceLanguage === "no" ? "selected" : ""
+        }>Tiếng Na Uy</option>
+      <option value="ro" ${this.settings.displayOptions.sourceLanguage === "ro" ? "selected" : ""
+        }>Tiếng Romania</option>
+      <option value="sv" ${this.settings.displayOptions.sourceLanguage === "sv" ? "selected" : ""
+        }>Tiếng Thụy Điển</option>
+      <option value="ur" ${this.settings.displayOptions.sourceLanguage === "ur" ? "selected" : ""
+        }>Tiếng Urdu</option>
+      <option value="vi" ${this.settings.displayOptions.sourceLanguage === "vi" ? "selected" : ""
+        }>Tiếng Việt</option>
+    </select>
+  </div>
+  <div class="settings-grid">
+    <span class="settings-label">Ngôn ngữ đích:</span>
+    <select id="targetLanguage" class="settings-input">
+      <option value="vi" ${this.settings.displayOptions.targetLanguage === "vi" ? "selected" : ""
+        }>Tiếng Việt</option>
+      <option value="en" ${this.settings.displayOptions.targetLanguage === "en" ? "selected" : ""
+        }>Tiếng Anh</option>
+      <option value="zh" ${this.settings.displayOptions.targetLanguage === "zh" ? "selected" : ""
+        }>Tiếng Trung</option>
+      <option value="ko" ${this.settings.displayOptions.targetLanguage === "ko" ? "selected" : ""
+        }>Tiếng Hàn</option>
+      <option value="ja" ${this.settings.displayOptions.targetLanguage === "ja" ? "selected" : ""
+        }>Tiếng Nhật</option>
+      <option value="fr" ${this.settings.displayOptions.targetLanguage === "fr" ? "selected" : ""
+        }>Tiếng Pháp</option>
+      <option value="de" ${this.settings.displayOptions.targetLanguage === "de" ? "selected" : ""
+        }>Tiếng Đức</option>
+      <option value="es" ${this.settings.displayOptions.targetLanguage === "es" ? "selected" : ""
+        }>Tiếng Tây Ban Nha</option>
+      <option value="it" ${this.settings.displayOptions.targetLanguage === "it" ? "selected" : ""
+        }>Tiếng Ý</option>
+      <option value="pt" ${this.settings.displayOptions.targetLanguage === "pt" ? "selected" : ""
+        }>Tiếng Bồ Đào Nha</option>
+      <option value="ru" ${this.settings.displayOptions.targetLanguage === "ru" ? "selected" : ""
+        }>Tiếng Nga</option>
+      <option value="ar" ${this.settings.displayOptions.targetLanguage === "ar" ? "selected" : ""
+        }>Tiếng Ả Rập</option>
+      <option value="hi" ${this.settings.displayOptions.targetLanguage === "hi" ? "selected" : ""
+        }>Tiếng Hindi</option>
+      <option value="bn" ${this.settings.displayOptions.targetLanguage === "bn" ? "selected" : ""
+        }>Tiếng Bengal</option>
+      <option value="id" ${this.settings.displayOptions.targetLanguage === "id" ? "selected" : ""
+        }>Tiếng Indonesia</option>
+      <option value="ms" ${this.settings.displayOptions.targetLanguage === "ms" ? "selected" : ""
+        }>Tiếng Malaysia</option>
+      <option value="th" ${this.settings.displayOptions.targetLanguage === "th" ? "selected" : ""
+        }>Tiếng Thái</option>
+      <option value="tr" ${this.settings.displayOptions.targetLanguage === "tr" ? "selected" : ""
+        }>Tiếng Thổ Nhĩ Kỳ</option>
+      <option value="nl" ${this.settings.displayOptions.targetLanguage === "nl" ? "selected" : ""
+        }>Tiếng Hà Lan</option>
+      <option value="pl" ${this.settings.displayOptions.targetLanguage === "pl" ? "selected" : ""
+        }>Tiếng Ba Lan</option>
+      <option value="uk" ${this.settings.displayOptions.targetLanguage === "uk" ? "selected" : ""
+        }>Tiếng Ukraine</option>
+      <option value="el" ${this.settings.displayOptions.targetLanguage === "el" ? "selected" : ""
+        }>Tiếng Hy Lạp</option>
+      <option value="cs" ${this.settings.displayOptions.targetLanguage === "cs" ? "selected" : ""
+        }>Tiếng Séc</option>
+      <option value="da" ${this.settings.displayOptions.targetLanguage === "da" ? "selected" : ""
+        }>Tiếng Đan Mạch</option>
+      <option value="fi" ${this.settings.displayOptions.targetLanguage === "fi" ? "selected" : ""
+        }>Tiếng Phần Lan</option>
+      <option value="he" ${this.settings.displayOptions.targetLanguage === "he" ? "selected" : ""
+        }>Tiếng Do Thái</option>
+      <option value="hu" ${this.settings.displayOptions.targetLanguage === "hu" ? "selected" : ""
+        }>Tiếng Hungary</option>
+      <option value="no" ${this.settings.displayOptions.targetLanguage === "no" ? "selected" : ""
+        }>Tiếng Na Uy</option>
+      <option value="ro" ${this.settings.displayOptions.targetLanguage === "ro" ? "selected" : ""
+        }>Tiếng Romania</option>
+      <option value="sv" ${this.settings.displayOptions.targetLanguage === "sv" ? "selected" : ""
+        }>Tiếng Thụy Điển</option>
+      <option value="ur" ${this.settings.displayOptions.targetLanguage === "ur" ? "selected" : ""
+        }>Tiếng Urdu</option>
+    </select>
+  </div>
+  <div id="languageLearningOptions" style="display: ${this.settings.displayOptions.translationMode === "language_learning"
+          ? "block"
+          : "none"
+        }">
+    <div id="sourceOption" class="settings-grid">
+      <span class="settings-label">Hiện bản gốc:</span>
+      <input type="checkbox" id="showSource" ${this.settings.displayOptions.languageLearning.showSource
+          ? "checked"
+          : ""
+        }>
+    </div>
+  </div>
+  <div class="settings-grid">
+    <span class="settings-label">Cỡ chữ dịch ảnh web:</span>
+    <select id="webImageFontSize" class="settings-input">
+      <option value="8px" ${this.settings.displayOptions?.webImageTranslation?.fontSize === "8px"
+          ? "selected"
+          : ""
+        }>Rất nhỏ (8px)</option>
+      <option value="9px" ${this.settings.displayOptions?.webImageTranslation?.fontSize === "9px"
+          ? "selected"
+          : ""
+        }>Nhỏ (9px)</option>
+      <option value="10px" ${this.settings.displayOptions?.webImageTranslation?.fontSize === "10px"
+          ? "selected"
+          : ""
+        }>Vừa (10px)</option>
+      <option value="12px" ${this.settings.displayOptions?.webImageTranslation?.fontSize === "12px"
+          ? "selected"
+          : ""
+        }>Lớn (12px)</option>
+      <option value="14px" ${this.settings.displayOptions?.webImageTranslation?.fontSize === "14px"
+          ? "selected"
+          : ""
+        }>Rất lớn (14px)</option>
+      <option value="16px" ${this.settings.displayOptions?.webImageTranslation?.fontSize === "16px"
+          ? "selected"
+          : ""
+        }>Siêu lớn (16px)</option>
+    </select>
+  </div>
+  <div class="settings-grid">
+    <span class="settings-label">Cỡ chữ dịch popup:</span>
     <select id="fontSize" class="settings-input">
       <option value="12px" ${this.settings.displayOptions?.fontSize === "12px" ? "selected" : ""
         }>Nhỏ (12px)</option>
@@ -1046,7 +1459,7 @@
     </select>
   </div>
   <div class="settings-grid">
-    <span class="settings-label">Độ rộng tối thiểu:</span>
+    <span class="settings-label">Độ rộng tối thiểu (popup):</span>
     <select id="minPopupWidth" class="settings-input">
       <option value="100px" ${this.settings.displayOptions?.minPopupWidth === "100px"
           ? "selected"
@@ -1091,7 +1504,7 @@
     </select>
   </div>
   <div class="settings-grid">
-    <span class="settings-label">Độ rộng tối đa:</span>
+    <span class="settings-label">Độ rộng tối đa (popup):</span>
     <select id="maxPopupWidth" class="settings-input">
       <option value="30vw" ${this.settings.displayOptions?.maxPopupWidth === "30vw" ? "selected" : ""
         }>30% màn hình
@@ -1136,6 +1549,15 @@
     <span class="settings-label">Bật phím tắt dịch:</span>
     <input type="checkbox" id="shortcutsEnabled" ${this.settings.shortcuts?.enabled ? "checked" : ""
         }>
+  </div>
+  <div class="settings-grid">
+      <span class="settings-label">Dịch text trong hộp nhập:</span>
+      <div class="shortcut-container">
+          <span class="shortcut-prefix">Alt +</span>
+          <input type="text" id="inputTranslationKey" class="shortcut-input settings-input"
+              value="${this.settings.inputTranslation?.shortcut?.key || "t"}"
+              ${!this.settings.inputTranslation?.enabled ? "disabled" : ""}>
+      </div>
   </div>
   <div class="settings-grid">
     <span class="settings-label">Dịch trang:</span>
@@ -1410,10 +1832,10 @@
       const addGeminiKey = container.querySelector("#addGeminiKey");
       const addOpenaiKey = container.querySelector("#addOpenaiKey");
       const geminiContainer = container.querySelector(
-        "#geminiKeys .api-keys-container",
+        "#geminiKeys .api-keys-container"
       );
       const openaiContainer = container.querySelector(
-        "#openaiKeys .api-keys-container",
+        "#openaiKeys .api-keys-container"
       );
       addGeminiKey.addEventListener("click", () => {
         const newEntry = document.createElement("div");
@@ -1442,15 +1864,14 @@
       container.addEventListener("click", (e) => {
         if (e.target.classList.contains("remove-key")) {
           const provider = e.target.dataset.provider;
-          const index = parseInt(e.target.dataset.index);
           e.target.parentElement.remove();
           const container = document.querySelector(
-            `#${provider}Keys .api-keys-container`,
+            `#${provider}Keys .api-keys-container`
           );
           Array.from(container.querySelectorAll(".remove-key")).forEach(
             (btn, i) => {
               btn.dataset.index = i;
-            },
+            }
           );
         }
       });
@@ -1465,6 +1886,24 @@
         proContainer.style.display = selectedType === "pro" ? "" : "none";
         visionContainer.style.display = selectedType === "vision" ? "" : "none";
         customContainer.style.display = selectedType === "custom" ? "" : "none";
+      });
+      const useCustomSelectors = container.querySelector("#useCustomSelectors");
+      const selectorsSettings = container.querySelector("#selectorsSettings");
+      useCustomSelectors.addEventListener("change", (e) => {
+        selectorsSettings.style.display = e.target.checked ? "block" : "none";
+      });
+      const useCustomPrompt = container.querySelector("#useCustomPrompt");
+      const promptSettings = container.querySelector("#promptSettings");
+      useCustomPrompt.addEventListener("change", (e) => {
+        promptSettings.style.display = e.target.checked ? "block" : "none";
+      });
+      const displayModeSelect = container.querySelector("#displayMode");
+      displayModeSelect.addEventListener("change", (e) => {
+        const languageLearningOptions = container.querySelector(
+          "#languageLearningOptions"
+        );
+        languageLearningOptions.style.display =
+          e.target.value === "language_learning" ? "block" : "none";
       });
       const handleEscape = (e) => {
         if (e.key === "Escape") {
@@ -1568,12 +2007,6 @@
         "cacheOptions",
         "rateLimit",
       ];
-      if (settings.pageTranslation) {
-        if (!Array.isArray(settings.pageTranslation.excludeSelectors)) {
-          settings.pageTranslation.excludeSelectors =
-            DEFAULT_SETTINGS.pageTranslation.excludeSelectors;
-        }
-      }
       return requiredFields.every((field) => settings.hasOwnProperty(field));
     }
     showNotification(message, type = "info") {
@@ -1596,7 +2029,7 @@
         color: textColor,
         padding: "10px 20px",
         borderRadius: "5px",
-        zIndex: "2147483647",
+        zIndex: "2147483647 !important",
         animation: "fadeInOut 2s ease",
         fontFamily: "Arial, sans-serif",
         fontSize: "14px",
@@ -1637,6 +2070,14 @@
         contextMenu: {
           ...DEFAULT_SETTINGS.contextMenu,
           ...(savedSettings?.contextMenu || {}),
+        },
+        promptSettings: {
+          ...DEFAULT_SETTINGS.promptSettings,
+          ...(savedSettings?.promptSettings || {}),
+        },
+        inputTranslation: {
+          ...DEFAULT_SETTINGS.inputTranslation,
+          ...(savedSettings?.inputTranslation || {}),
         },
         pageTranslation: {
           ...DEFAULT_SETTINGS.pageTranslation,
@@ -1693,10 +2134,21 @@
       const openaiKeys = Array.from(settingsUI.querySelectorAll(".openai-key"))
         .map((input) => input.value.trim())
         .filter((key) => key !== "");
+      const useCustomSelectors = settingsUI.querySelector(
+        "#useCustomSelectors"
+      ).checked;
+      const customSelectors = settingsUI
+        .querySelector("#customSelectors")
+        .value.split("\n")
+        .map((s) => s.trim())
+        .filter((s) => s && s.length > 0);
+      const combineWithDefault = settingsUI.querySelector(
+        "#combineWithDefault"
+      ).checked;
       const maxWidthVw = settingsUI.querySelector("#maxPopupWidth").value;
       const maxWidthPx = (window.innerWidth * parseInt(maxWidthVw)) / 100;
       const minWidthPx = parseInt(
-        settingsUI.querySelector("#minPopupWidth").value,
+        settingsUI.querySelector("#minPopupWidth").value
       );
       const finalMinWidth =
         minWidthPx > maxWidthPx
@@ -1705,7 +2157,7 @@
       const newSettings = {
         theme: settingsUI.querySelector('input[name="theme"]:checked').value,
         apiProvider: settingsUI.querySelector(
-          'input[name="apiProvider"]:checked',
+          'input[name="apiProvider"]:checked'
         ).value,
         apiKey: {
           gemini:
@@ -1731,27 +2183,69 @@
         contextMenu: {
           enabled: settingsUI.querySelector("#contextMenuEnabled").checked,
         },
+        inputTranslation: {
+          enabled: settingsUI.querySelector("#inputTranslationEnabled").checked,
+          shortcut: {
+            key: settingsUI.querySelector("#inputTranslationKey").value,
+            altKey: true,
+          },
+        },
+        promptSettings: {
+          enabled: true,
+          useCustom: settingsUI.querySelector("#useCustomPrompt").checked,
+          customPrompts: {
+            normal: settingsUI.querySelector("#normalPrompt").value.trim(),
+            normal_chinese: settingsUI
+              .querySelector("#normalPrompt_chinese")
+              .value.trim(),
+            advanced: settingsUI.querySelector("#advancedPrompt").value.trim(),
+            advanced_chinese: settingsUI
+              .querySelector("#advancedPrompt_chinese")
+              .value.trim(),
+            ocr: settingsUI.querySelector("#ocrPrompt").value.trim(),
+            ocr_chinese: settingsUI
+              .querySelector("#ocrPrompt_chinese")
+              .value.trim(),
+            media: settingsUI.querySelector("#mediaPrompt").value.trim(),
+            media_chinese: settingsUI
+              .querySelector("#mediaPrompt_chinese")
+              .value.trim(),
+            page: settingsUI.querySelector("#pagePrompt").value.trim(),
+            page_chinese: settingsUI
+              .querySelector("#pagePrompt_chinese")
+              .value.trim(),
+          },
+        },
         pageTranslation: {
           enabled: settingsUI.querySelector("#pageTranslationEnabled").checked,
           autoTranslate: settingsUI.querySelector("#autoTranslatePage").checked,
           showInitialButton:
             settingsUI.querySelector("#showInitialButton").checked,
           buttonTimeout: DEFAULT_SETTINGS.pageTranslation.buttonTimeout,
-          excludeSelectors: settingsUI
-            .querySelector("#excludeSelectors")
-            .value.split("\n")
-            .map((s) => s.trim())
-            .filter((s) => s && s.length > 0),
+          useCustomSelectors,
+          customSelectors,
+          combineWithDefault,
+          defaultSelectors: DEFAULT_SETTINGS.pageTranslation.defaultSelectors,
+          excludeSelectors: useCustomSelectors
+            ? combineWithDefault
+              ? [
+                ...new Set([
+                  ...DEFAULT_SETTINGS.pageTranslation.defaultSelectors,
+                  ...customSelectors,
+                ]),
+              ]
+              : customSelectors
+            : DEFAULT_SETTINGS.pageTranslation.defaultSelectors,
         },
         ocrOptions: {
           enabled: settingsUI.querySelector("#ocrEnabled").checked,
           preferredProvider: settingsUI.querySelector(
-            'input[name="apiProvider"]:checked',
+            'input[name="apiProvider"]:checked'
           ).value,
           displayType: "popup",
           maxFileSize: CONFIG.OCR.maxFileSize,
           temperature: parseFloat(
-            settingsUI.querySelector("#ocrTemperature").value,
+            settingsUI.querySelector("#ocrTemperature").value
           ),
           topP: parseFloat(settingsUI.querySelector("#ocrTopP").value),
           topK: parseInt(settingsUI.querySelector("#ocrTopK").value),
@@ -1759,17 +2253,27 @@
         mediaOptions: {
           enabled: settingsUI.querySelector("#mediaEnabled").checked,
           temperature: parseFloat(
-            settingsUI.querySelector("#mediaTemperature").value,
+            settingsUI.querySelector("#mediaTemperature").value
           ),
           topP: parseFloat(settingsUI.querySelector("#mediaTopP").value),
           topK: parseInt(settingsUI.querySelector("#mediaTopK").value),
         },
         displayOptions: {
-          showOriginalText:
-            settingsUI.querySelector("#showOriginalText").checked,
           fontSize: settingsUI.querySelector("#fontSize").value,
           minPopupWidth: finalMinWidth,
           maxPopupWidth: maxWidthVw,
+          webImageTranslation: {
+            fontSize: settingsUI.querySelector("#webImageFontSize").value,
+          },
+          translationMode: settingsUI.querySelector("#displayMode").value,
+          targetLanguage: settingsUI.querySelector("#targetLanguage").value,
+          sourceLanguage: settingsUI.querySelector("#sourceLanguage").value,
+          languageLearning: {
+            enabled:
+              settingsUI.querySelector("#displayMode").value ===
+              "language_learning",
+            showSource: settingsUI.querySelector("#showSource").checked,
+          },
         },
         shortcuts: {
           settingsEnabled: settingsUI.querySelector("#settingsShortcutEnabled")
@@ -1808,7 +2312,7 @@
         touchOptions: {
           enabled: settingsUI.querySelector("#touchEnabled").checked,
           sensitivity: parseInt(
-            settingsUI.querySelector("#touchSensitivity").value,
+            settingsUI.querySelector("#touchSensitivity").value
           ),
           twoFingers: {
             translateType: settingsUI.querySelector("#twoFingersSelect").value,
@@ -1822,50 +2326,49 @@
           text: {
             enabled: settingsUI.querySelector("#textCacheEnabled").checked,
             maxSize: parseInt(
-              settingsUI.querySelector("#textCacheMaxSize").value,
+              settingsUI.querySelector("#textCacheMaxSize").value
             ),
             expirationTime: parseInt(
-              settingsUI.querySelector("#textCacheExpiration").value,
+              settingsUI.querySelector("#textCacheExpiration").value
             ),
           },
           image: {
             enabled: settingsUI.querySelector("#imageCacheEnabled").checked,
             maxSize: parseInt(
-              settingsUI.querySelector("#imageCacheMaxSize").value,
+              settingsUI.querySelector("#imageCacheMaxSize").value
             ),
             expirationTime: parseInt(
-              settingsUI.querySelector("#imageCacheExpiration").value,
+              settingsUI.querySelector("#imageCacheExpiration").value
             ),
           },
           media: {
             enabled: document.getElementById("mediaCacheEnabled").checked,
             maxSize: parseInt(
-              document.getElementById("mediaCacheMaxSize").value,
+              document.getElementById("mediaCacheMaxSize").value
             ),
             expirationTime:
               parseInt(
-                document.getElementById("mediaCacheExpirationTime").value,
+                document.getElementById("mediaCacheExpirationTime").value
               ) * 1000,
           },
         },
         rateLimit: {
           maxRequests: parseInt(settingsUI.querySelector("#maxRequests").value),
           perMilliseconds: parseInt(
-            settingsUI.querySelector("#perMilliseconds").value,
+            settingsUI.querySelector("#perMilliseconds").value
           ),
         },
       };
       const isToolsEnabled = settingsUI.querySelector(
-        "#showTranslatorTools",
+        "#showTranslatorTools"
       ).checked;
       const currentState =
         localStorage.getItem("translatorToolsEnabled") === "true";
       if (isToolsEnabled !== currentState) {
         localStorage.setItem(
           "translatorToolsEnabled",
-          isToolsEnabled.toString(),
+          isToolsEnabled.toString()
         );
-        this.translator.ui.removeToolsListeners();
         this.translator.ui.removeToolsContainer();
         this.translator.ui.removeAllProcessingIndicators();
         this.translator.ui.resetState();
@@ -1888,6 +2391,642 @@
       return path.split(".").reduce((obj, key) => obj?.[key], this.settings);
     }
   }
+  class APIKeyManager {
+    constructor(settings) {
+      this.settings = settings;
+      this.failedKeys = new Map();
+      this.activeKeys = new Map();
+      this.keyRotationInterval = 10000; // 10s
+      this.maxConcurrentRequests = 4; // Số request đồng thời tối đa cho mỗi key
+      this.setupKeyRotation();
+    }
+    markKeyAsFailed(key) {
+      if (!key) return;
+      this.failedKeys.set(key, {
+        timestamp: Date.now(),
+        failures: (this.failedKeys.get(key)?.failures || 0) + 1,
+      });
+      if (this.activeKeys.has(key)) {
+        this.activeKeys.delete(key);
+      }
+    }
+    getAvailableKeys(provider) {
+      const allKeys = this.settings.apiKey[provider];
+      if (!allKeys || allKeys.length === 0) {
+        throw new Error("Không có API key nào được cấu hình");
+      }
+      return allKeys.filter((key) => {
+        if (!key) return false;
+        const failedInfo = this.failedKeys.get(key);
+        const activeInfo = this.activeKeys.get(key);
+        const isFailed =
+          failedInfo && Date.now() - failedInfo.timestamp < 60000;
+        const isBusy =
+          activeInfo && activeInfo.requests >= this.maxConcurrentRequests;
+        return !isFailed && !isBusy;
+      });
+    }
+    getRandomKey(provider) {
+      const availableKeys = this.getAvailableKeys(provider);
+      if (availableKeys.length === 0) {
+        throw new Error("Không có API key khả dụng");
+      }
+      return availableKeys[Math.floor(Math.random() * availableKeys.length)];
+    }
+    async useKey(key, action) {
+      let activeInfo = this.activeKeys.get(key) || { requests: 0 };
+      activeInfo.requests++;
+      this.activeKeys.set(key, activeInfo);
+      try {
+        const result = await action();
+        return result;
+      } catch (error) {
+        if (
+          error.message.includes("API key not valid") ||
+          error.message.includes("rate limit") ||
+          error.status === 400 ||
+          error.status === 429
+        ) {
+          this.markKeyAsFailed(key);
+        }
+        throw error;
+      } finally {
+        activeInfo = this.activeKeys.get(key);
+        if (activeInfo) {
+          activeInfo.requests--;
+          if (activeInfo.requests <= 0) {
+            this.activeKeys.delete(key);
+          } else {
+            this.activeKeys.set(key, activeInfo);
+          }
+        }
+      }
+    }
+    async executeWithMultipleKeys(
+      promiseGenerator,
+      provider,
+      maxConcurrent = 3
+    ) {
+      const availableKeys = this.getAvailableKeys(provider);
+      if (!availableKeys || availableKeys.length === 0) {
+        throw new Error("Không có API key khả dụng");
+      }
+      const errors = [];
+      const promises = [];
+      let currentKeyIndex = 0;
+      const processNext = async () => {
+        if (currentKeyIndex >= availableKeys.length) return null;
+        const key = availableKeys[currentKeyIndex++];
+        try {
+          const result = await this.useKey(key, () => promiseGenerator(key));
+          if (result) return result;
+        } catch (error) {
+          errors.push({ key, error });
+          if (
+            error.message.includes("API key not valid") ||
+            error.message.includes("rate limit")
+          ) {
+            this.markKeyAsFailed(key);
+          }
+          return processNext();
+        }
+      };
+      for (let i = 0; i < Math.min(maxConcurrent, availableKeys.length); i++) {
+        promises.push(processNext());
+      }
+      const results = await Promise.allSettled(promises);
+      const successResults = results
+        .filter((r) => r.status === "fulfilled" && r.value)
+        .map((r) => r.value);
+      if (successResults.length > 0) {
+        return successResults;
+      }
+      throw new Error(
+        `Tất cả API key đều thất bại: ${errors
+          .map((e) => e.error.message)
+          .join(", ")}`
+      );
+    }
+    markKeyAsFailed(key) {
+      this.failedKeys.set(key, {
+        timestamp: Date.now(),
+        failures: (this.failedKeys.get(key)?.failures || 0) + 1,
+      });
+    }
+    setupKeyRotation() {
+      setInterval(() => {
+        const now = Date.now();
+        for (const [key, info] of this.failedKeys.entries()) {
+          if (now - info.timestamp >= 60000) {
+            this.failedKeys.delete(key);
+          }
+        }
+      }, this.keyRotationInterval);
+    }
+  }
+  class APIManager {
+    constructor(config, getSettings) {
+      this.config = config;
+      this.getSettings = getSettings;
+      this.keyManager = new APIKeyManager(getSettings());
+      this.currentProvider = getSettings().apiProvider;
+      this.networkOptimizer = new NetworkOptimizer();
+    }
+    async request(prompt) {
+      const provider = this.config.providers[this.currentProvider];
+      if (!provider) {
+        throw new Error(`Provider ${this.currentProvider} not found`);
+      }
+      let attempts = 0;
+      let lastError;
+      while (attempts < this.config.maxRetries) {
+        try {
+          const key = await this.keyManager.getRandomKey(this.currentProvider);
+          const response = await this.keyManager.useKey(key, () =>
+            this.makeRequest(provider, prompt, key)
+          );
+          return provider.responseParser(response);
+        } catch (error) {
+          console.error(`Attempt ${attempts + 1} failed:`, error);
+          lastError = error;
+          attempts++;
+          if (error.message.includes("rate limit")) {
+            continue;
+          }
+          await new Promise((resolve) =>
+            setTimeout(resolve, this.config.retryDelay * Math.pow(2, attempts))
+          );
+        }
+      }
+      throw (
+        lastError || new Error("Failed to get translation after all retries")
+      );
+    }
+    async batchRequest(prompts) {
+      return this.keyManager.executeWithMultipleKeys(async (key) => {
+        const results = [];
+        for (const prompt of prompts) {
+          const response = await this.makeRequest(
+            this.config.providers[this.currentProvider],
+            prompt,
+            key
+          );
+          results.push(response);
+        }
+        return results;
+      }, this.currentProvider);
+    }
+    async makeRequest(provider, prompt, key) {
+      const selectedModel = this.getGeminiModel();
+      return new Promise((resolve, reject) => {
+        GM_xmlhttpRequest({
+          method: "POST",
+          url: `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${key}`,
+          headers: { "Content-Type": "application/json" },
+          data: JSON.stringify({
+            contents: [
+              {
+                parts: [{ text: prompt }],
+              },
+            ],
+            generationConfig: {
+              temperature: this.getSettings().mediaOptions.temperature,
+              topP: this.getSettings().mediaOptions.topP,
+              topK: this.getSettings().mediaOptions.topK,
+            },
+          }),
+          onload: (response) => {
+            if (response.status === 200) {
+              try {
+                const result = JSON.parse(response.responseText);
+                if (result?.candidates?.[0]?.content?.parts?.[0]?.text) {
+                  resolve(result.candidates[0].content.parts[0].text);
+                } else {
+                  reject(new Error("Invalid response format"));
+                }
+              } catch (error) {
+                reject(new Error("Failed to parse response"));
+              }
+            } else {
+              if (response.status === 400) {
+                reject(new Error("API key not valid"));
+              } else if (response.status === 429) {
+                reject(new Error("API key rate limit exceeded"));
+              } else {
+                reject(new Error(`API Error: ${response.status}`));
+              }
+            }
+          },
+          onerror: (error) => reject(error),
+        });
+      });
+    }
+    getGeminiModel() {
+      const settings = this.getSettings();
+      return settings.selectedModel || "gemini-2.0-flash-lite";
+    }
+    markKeyAsFailed(key) {
+      if (this.keyManager) {
+        this.keyManager.markKeyAsFailed(key);
+      }
+    }
+  }
+  class InputTranslator {
+    constructor(translator) {
+      this.translator = translator;
+      this.isTranslating = false;
+      this.activeButtons = new Map();
+      this.page = new PageTranslator(translator);
+      this.setupObservers();
+      this.setupEventListeners();
+      this.initializeExistingEditors();
+      GM_addStyle(`
+            .input-translate-button-container {
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+            }
+            .input-translate-button {
+                font-family: inherit;
+            }
+        `);
+    }
+    setupObservers() {
+      if (!this.translator.userSettings.settings.inputTranslation?.enabled) return;
+      this.mutationObserver = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          mutation.addedNodes.forEach((node) => {
+            if (node.nodeType === 1) {
+              this.handleNewNode(node);
+            }
+          });
+          mutation.removedNodes.forEach((node) => {
+            if (node.nodeType === 1) {
+              this.handleRemovedNode(node);
+            }
+          });
+        });
+      });
+      this.resizeObserver = new ResizeObserver(
+        debounce((entries) => {
+          entries.forEach((entry) => {
+            const editor = this.findParentEditor(entry.target);
+            if (editor) {
+              this.updateButtonPosition(editor);
+            }
+          });
+        }, 100)
+      );
+      this.mutationObserver.observe(document.body, {
+        childList: true,
+        subtree: true,
+      });
+    }
+    getEditorSelectors() {
+      return [
+        ".fr-element.fr-view",
+        ".message-editable",
+        ".js-editor",
+        ".xenForm textarea",
+        '[contenteditable="true"]',
+        '[role="textbox"]',
+        "textarea",
+        'input[type="text"]',
+      ].join(",");
+    }
+    isValidEditor(element) {
+      if (!element) return false;
+      const style = window.getComputedStyle(element);
+      if (style.display === "none" || style.visibility === "hidden") {
+        return false;
+      }
+      const rect = element.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) {
+        return false;
+      }
+      return element.matches(this.getEditorSelectors());
+    }
+    findParentEditor(element) {
+      while (element && element !== document.body) {
+        if (this.isValidEditor(element)) {
+          return element;
+        }
+        if (element.tagName === "IFRAME") {
+          try {
+            const iframeDoc = element.contentDocument;
+            if (iframeDoc && this.isValidEditor(iframeDoc.body)) {
+              return iframeDoc.body;
+            }
+          } catch (e) {
+          }
+        }
+        element = element.parentElement;
+      }
+      return null;
+    }
+    setupEventListeners() {
+      if (!this.translator.userSettings.settings.inputTranslation?.enabled) return;
+      document.addEventListener("focusin", (e) => {
+        const editor = this.findParentEditor(e.target);
+        if (editor) {
+          this.addTranslateButton(editor);
+          this.updateButtonVisibility(editor);
+        }
+      });
+      document.addEventListener("focusout", (e) => {
+        const editor = this.findParentEditor(e.target);
+        if (editor) {
+          setTimeout(() => {
+            const activeElement = document.activeElement;
+            const container = this.activeButtons.get(editor);
+            if (container && !container.contains(activeElement)) {
+              this.removeTranslateButton(editor);
+            }
+          }, 100);
+        }
+      });
+      document.addEventListener("input", (e) => {
+        const editor = this.findParentEditor(e.target);
+        if (editor) {
+          if (!this.activeButtons.has(editor)) {
+            this.addTranslateButton(editor);
+          }
+          this.updateButtonVisibility(editor);
+        }
+      });
+      document.addEventListener('keydown', (e) => {
+        const settings = this.translator.userSettings.settings;
+        const shortcut = settings.inputTranslation?.shortcut;
+        if (!settings.inputTranslation?.enabled || !shortcut) return;
+        if ((e.altKey || e.metaKey) && e.key.toLowerCase() === shortcut.key.toLowerCase()) {
+          e.preventDefault();
+          const activeElement = document.activeElement;
+          if (this.isValidEditor(activeElement)) {
+            const text = this.getEditorContent(activeElement);
+            if (text) {
+              this.translateEditor(activeElement, true);
+            }
+          }
+        }
+      });
+    }
+    addTranslateButton(editor) {
+      if (this.activeButtons.has(editor)) {
+        this.updateButtonVisibility(editor);
+        return;
+      }
+      const container = this.createButtonContainer();
+      const translateButton = this.createButton(
+        "🌐",
+        "Dịch sang ngôn ngữ đích"
+      );
+      const reverseButton = this.createButton("🔄", "Dịch sang ngôn ngữ nguồn");
+      translateButton.onclick = async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        await this.translateEditor(editor, false);
+      };
+      reverseButton.onclick = async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        await this.translateEditor(editor, true);
+      };
+      container.appendChild(translateButton);
+      container.appendChild(reverseButton);
+      this.positionButtonContainer(container, editor);
+      document.body.appendChild(container);
+      this.activeButtons.set(editor, container);
+      this.updateButtonVisibility(editor);
+      this.resizeObserver.observe(editor);
+    }
+    updateButtonVisibility(editor) {
+      const container = this.activeButtons.get(editor);
+      if (container) {
+        const hasContent = this.getEditorContent(editor);
+        container.style.display = hasContent ? "" : "none";
+      }
+    }
+    getEditorContent(editor) {
+      let content = "";
+      if (editor.value !== undefined) {
+        content = editor.value;
+      } else if (editor.textContent !== undefined) {
+        content = editor.textContent;
+      } else if (editor.innerText !== undefined) {
+        content = editor.innerText;
+      }
+      return content.trim();
+    }
+    setEditorContent(editor, content) {
+      if (editor.matches(".fr-element.fr-view")) {
+        editor.innerHTML = content;
+      } else if (editor.value !== undefined) {
+        editor.value = content;
+      } else {
+        editor.innerHTML = content;
+      }
+      editor.dispatchEvent(new Event("input", { bubbles: true }));
+      editor.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+    createButtonContainer() {
+      const container = document.createElement("div");
+      container.className = "input-translate-button-container";
+      const theme = this.getCurrentTheme();
+      container.style.cssText = `
+            position: absolute;
+            display: flex;
+            gap: 2px;
+            align-items: center;
+            z-index: 2147483647 !important;
+            pointer-events: auto;
+            background: ${theme.background};
+            border-radius: 3px;
+            padding: 2px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            border: 1px solid ${theme.border};
+        `;
+      return container;
+    }
+    createButton(icon, title) {
+      const button = document.createElement("button");
+      button.className = "input-translate-button";
+      button.innerHTML = icon;
+      button.title = title;
+      const theme = this.getCurrentTheme();
+      button.style.cssText = `
+            background: transparent;
+            color: ${theme.text};
+            border: none;
+            border-radius: 3px;
+            padding: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 28px;
+            height: 28px;
+            transition: all 0.15s ease;
+            margin: 0;
+            outline: none;
+        `;
+      button.onmouseover = () => {
+        button.style.background = theme.hoverBg;
+        button.style.color = theme.hoverText;
+      };
+      button.onmouseout = () => {
+        button.style.background = "transparent";
+        button.style.color = theme.text;
+      };
+      return button;
+    }
+    async translateEditor(editor, reverse = false) {
+      if (!this.translator.userSettings.settings.inputTranslation?.enabled) return;
+      if (this.isTranslating) return;
+      this.isTranslating = true;
+      const container = this.activeButtons.get(editor);
+      const button = container?.querySelector(
+        reverse
+          ? ".input-translate-button:last-child"
+          : ".input-translate-button:first-child"
+      );
+      const originalText = button?.innerHTML;
+      try {
+        const text = this.getEditorContent(editor);
+        if (!text) return;
+        button.innerHTML = "⌛";
+        button.style.opacity = "0.7";
+        const displayOptions =
+          this.translator.userSettings.settings.displayOptions;
+        const sourceLanguage =
+          displayOptions.sourceLanguage === "auto"
+            ? this.page.languageCode
+            : displayOptions.sourceLanguage;
+        console.log("sourceLanguage: ", sourceLanguage);
+        const translation = await this.translator.translate(
+          text,
+          null,
+          false,
+          false,
+          reverse ? sourceLanguage : displayOptions.targetLanguage
+        );
+        if (translation) {
+          this.setEditorContent(editor, translation);
+        }
+      } catch (error) {
+        console.error("Translation error:", error);
+        this.translator.ui.showNotification(
+          "Lỗi dịch: " + error.message,
+          "error"
+        );
+      } finally {
+        this.isTranslating = false;
+        if (button) {
+          button.innerHTML = originalText;
+          button.style.opacity = "1";
+        }
+      }
+    }
+    positionButtonContainer(container, editor) {
+      const rect = editor.getBoundingClientRect();
+      const toolbar = this.findEditorToolbar(editor);
+      if (toolbar) {
+        const toolbarRect = toolbar.getBoundingClientRect();
+        container.style.top = `${toolbarRect.top + window.scrollY}px`;
+        container.style.left = `${toolbarRect.right + 5}px`;
+      } else {
+        container.style.top = `${rect.top + window.scrollY}px`;
+        container.style.left = `${rect.right + 5}px`;
+      }
+    }
+    findEditorToolbar(editor) {
+      return (
+        editor.closest(".fr-box")?.querySelector(".fr-toolbar") ||
+        editor.closest(".xenForm")?.querySelector(".buttonGroup")
+      );
+    }
+    updateButtonPosition(editor) {
+      const container = this.activeButtons.get(editor);
+      if (container) {
+        this.positionButtonContainer(container, editor);
+      }
+    }
+    getCurrentTheme() {
+      const mode =
+        this.translator.userSettings.settings.theme || CONFIG.THEME.mode;
+      const theme = CONFIG.THEME[mode];
+      return {
+        background: theme.background,
+        text: theme.text,
+        border: theme.border,
+        hoverBg: theme.background,
+        hoverText: theme.text,
+      };
+    }
+    updateAllButtonStyles() {
+      const theme = this.getCurrentTheme();
+      this.activeButtons.forEach((container) => {
+        container.style.background = theme.background;
+        container.style.borderColor = theme.border;
+        container
+          .querySelectorAll(".input-translate-button")
+          .forEach((button) => {
+            button.style.color = theme.text;
+          });
+      });
+    }
+    handleNewNode(node) {
+      if (this.isValidEditor(node)) {
+        this.addTranslateButton(node);
+      }
+      node.querySelectorAll(this.getEditorSelectors()).forEach((editor) => {
+        if (this.isValidEditor(editor)) {
+          this.addTranslateButton(editor);
+        }
+      });
+    }
+    handleRemovedNode(node) {
+      if (this.activeButtons.has(node)) {
+        this.removeTranslateButton(node);
+      }
+      node.querySelectorAll(this.getEditorSelectors()).forEach((editor) => {
+        if (this.activeButtons.has(editor)) {
+          this.removeTranslateButton(editor);
+        }
+      });
+    }
+    handleEditorFocus(editor) {
+      if (this.getEditorContent(editor)) {
+        this.addTranslateButton(editor);
+      }
+    }
+    handleEditorClick(editor) {
+      if (this.getEditorContent(editor)) {
+        this.addTranslateButton(editor);
+      }
+    }
+    removeTranslateButton(editor) {
+      const container = this.activeButtons.get(editor);
+      if (container) {
+        container.remove();
+        this.activeButtons.delete(editor);
+        this.resizeObserver.unobserve(editor);
+      }
+    }
+    initializeExistingEditors() {
+      if (!this.translator.userSettings.settings.inputTranslation?.enabled) return;
+      document.querySelectorAll(this.getEditorSelectors()).forEach((editor) => {
+        if (this.isValidEditor(editor) && this.getEditorContent(editor)) {
+          this.addTranslateButton(editor);
+        }
+      });
+    }
+    cleanup() {
+      this.mutationObserver.disconnect();
+      this.resizeObserver.disconnect();
+      this.activeButtons.forEach((container, editor) => {
+        this.removeTranslateButton(editor);
+      });
+    }
+  }
   class OCRManager {
     constructor(translator) {
       if (!translator) {
@@ -1897,24 +3036,18 @@
       this.isProcessing = false;
       this.imageCache = new ImageCache();
     }
-
     async captureScreen() {
       try {
         this.translator.ui.showProcessingStatus(
-          "Đang chuẩn bị chụp màn hình...",
+          "Đang chuẩn bị chụp màn hình..."
         );
-
-        // Ẩn các elements của translator
         const elements = document.querySelectorAll(
-          ".translator-tools-container, .translator-notification, .center-translate-status",
+          ".translator-tools-container, .translator-notification, .center-translate-status"
         );
         elements.forEach((el) => {
           if (el) el.style.visibility = "hidden";
         });
-
         await new Promise((resolve) => setTimeout(resolve, 100));
-
-        // Cấu hình html2canvas
         const options = {
           useCORS: true,
           allowTaint: true,
@@ -1929,17 +3062,15 @@
           y: window.pageYOffset,
           onclone: function(clonedDoc) {
             const elements = clonedDoc.querySelectorAll(
-              ".translator-tools-container, .translator-notification, .center-translate-status",
+              ".translator-tools-container, .translator-notification, .center-translate-status"
             );
             elements.forEach((el) => {
               if (el) el.style.display = "none";
             });
           },
         };
-
         this.translator.ui.updateProcessingStatus("Đang chụp màn hình...", 30);
         const canvas = await html2canvas(document.documentElement, options);
-
         this.translator.ui.updateProcessingStatus("Đang xử lý ảnh...", 60);
         const blob = await new Promise((resolve, reject) => {
           try {
@@ -1952,26 +3083,24 @@
                 }
               },
               "image/png",
-              1.0,
+              1.0
             );
           } catch (error) {
             reject(error);
           }
         });
-
-        // Khôi phục visibility của các elements
         elements.forEach((el) => {
           if (el) el.style.visibility = "";
         });
-
         this.translator.ui.updateProcessingStatus("Đang chuẩn bị OCR...", 80);
-        const file = new File([blob], "king1x32_screenshot.png", { type: "image/png" });
+        const file = new File([blob], "king1x32_screenshot.png", {
+          type: "image/png",
+        });
         return file;
       } catch (error) {
         console.error("Screen capture error:", error);
-        // Khôi phục visibility trong trường hợp lỗi
         const elements = document.querySelectorAll(
-          ".translator-tools-container, .translator-notification, .center-translate-status",
+          ".translator-tools-container, .translator-notification, .center-translate-status"
         );
         elements.forEach((el) => {
           if (el) el.style.visibility = "";
@@ -1979,16 +3108,12 @@
         throw new Error(`Không thể chụp màn hình: ${error.message}`);
       }
     }
-
     async processImage(file) {
       try {
         this.isProcessing = true;
         this.translator.ui.showProcessingStatus("Đang xử lý ảnh...");
-
         const base64Image = await this.fileToBase64(file);
         this.translator.ui.updateProcessingStatus("Đang kiểm tra cache...", 20);
-
-        // Kiểm tra cache
         if (
           this.imageCache &&
           this.translator.userSettings.settings.cacheOptions.image.enabled
@@ -1997,26 +3122,21 @@
           if (cachedResult) {
             this.translator.ui.updateProcessingStatus(
               "Đã tìm thấy trong cache",
-              100,
+              100
             );
             return cachedResult;
           }
         }
-
         this.translator.ui.updateProcessingStatus("Đang nhận diện text...", 40);
-
         const settings = this.translator.userSettings.settings;
         const selectedModel = this.translator.api.getGeminiModel();
-
+        const prompt = this.translator.createPrompt("ocr", "ocr");
         const requestBody = {
           contents: [
             {
               parts: [
                 {
-                  text:
-                    file.name === "king1x32_screenshot.png"
-                      ? "Đây là ảnh chụp màn hình. Hãy đọc và dịch toàn bộ text trong ảnh sang tiếng Việt một cách tự nhiên và chính xác. Chỉ trả về bản dịch, không cần giải thích gì thêm."
-                      : "Đọc hiểu thật kĩ và dịch toàn bộ văn bản trong hình ảnh sang tiếng Việt thật tự nhiên và chính xác. Chỉ trả về bản dịch, không cần giải thích gì thêm.",
+                  text: prompt,
                 },
                 {
                   inline_data: {
@@ -2033,9 +3153,7 @@
             topK: settings.ocrOptions.topK,
           },
         };
-
         this.translator.ui.updateProcessingStatus("Đang xử lý OCR...", 60);
-
         const results =
           await this.translator.api.keyManager.executeWithMultipleKeys(
             async (key) => {
@@ -2074,22 +3192,16 @@
               });
               return response;
             },
-            settings.apiProvider,
+            settings.apiProvider
           );
-
         this.translator.ui.updateProcessingStatus("Đang hoàn thiện...", 80);
-
         if (!results || results.length === 0) {
           throw new Error("Không thể trích xuất text từ ảnh");
         }
-
         const finalResult = results[0];
-
-        // Lưu vào cache nếu thành công
         if (this.imageCache && settings.cacheOptions.image.enabled) {
           await this.imageCache.set(base64Image, finalResult);
         }
-
         this.translator.ui.updateProcessingStatus("Hoàn thành", 100);
         return finalResult;
       } catch (error) {
@@ -2115,27 +3227,20 @@
       this.isProcessing = false;
       this.mediaCache = new MediaCache();
     }
-
     async processMediaFile(file) {
       try {
-        // Kiểm tra định dạng và kích thước
         if (!this.isValidFormat(file)) {
           throw new Error("Định dạng file không được hỗ trợ");
         }
-
         if (!this.isValidSize(file)) {
           throw new Error(
-            `File quá lớn. Kích thước tối đa: ${this.getMaxSizeInMB(file)}MB`,
+            `File quá lớn. Kích thước tối đa: ${this.getMaxSizeInMB(file)}MB`
           );
         }
-
         this.isProcessing = true;
         this.translator.ui.showProcessingStatus("Đang xử lý media...");
-
         const base64Media = await this.fileToBase64(file);
         this.translator.ui.updateProcessingStatus("Đang kiểm tra cache...", 20);
-
-        // Kiểm tra cache
         const cacheEnabled =
           this.translator.userSettings.settings.cacheOptions.media?.enabled;
         if (cacheEnabled && this.mediaCache) {
@@ -2143,30 +3248,26 @@
           if (cachedResult) {
             this.translator.ui.updateProcessingStatus(
               "Đã tìm thấy trong cache",
-              100,
+              100
             );
             this.translator.ui.displayPopup(cachedResult, null, "Bản dịch");
             return;
           }
         }
-
         this.translator.ui.updateProcessingStatus(
           "Đang xử lý audio/video...",
-          40,
+          40
         );
-
-        // Lấy settings từ user settings
         const settings = this.translator.userSettings.settings;
         const mediaSettings = settings.mediaOptions;
         const selectedModel = this.translator.api.getGeminiModel();
-
-        // Tạo request body
+        const prompt = this.translator.createPrompt("media", "media");
         const requestBody = {
           contents: [
             {
               parts: [
                 {
-                  text: "Đây là nội dung audio/video. Chỉ cần nghe thôi nên hãy lắng nghe thật kĩ và dịch sang tiếng Việt thật tự nhiên, đảm bảo truyền tải đúng ý nghĩa và ngữ cảnh của đoạn thoại thật chuẩn. Chỉ trả về bản dịch, không cần giải thích thêm.",
+                  text: prompt,
                 },
                 {
                   inline_data: {
@@ -2183,10 +3284,7 @@
             topK: mediaSettings.topK,
           },
         };
-
         this.translator.ui.updateProcessingStatus("Đang dịch...", 60);
-
-        // Gửi request đến API
         const results =
           await this.translator.api.keyManager.executeWithMultipleKeys(
             async (key) => {
@@ -2225,22 +3323,16 @@
               });
               return response;
             },
-            settings.apiProvider,
+            settings.apiProvider
           );
-
         this.translator.ui.updateProcessingStatus("Đang hoàn thiện...", 80);
-
         if (!results || results.length === 0) {
           throw new Error("Không thể xử lý media");
         }
-
         const finalResult = results[0];
-
-        // Lưu vào cache nếu được bật
         if (cacheEnabled && this.mediaCache) {
           await this.mediaCache.set(base64Media, finalResult);
         }
-
         this.translator.ui.updateProcessingStatus("Hoàn thành", 100);
         this.translator.ui.displayPopup(finalResult, null, "Bản dịch");
       } catch (error) {
@@ -2354,13 +3446,48 @@
       this.MIN_TEXT_LENGTH = 100;
       this.originalTexts = new Map();
       this.isTranslated = false;
+      this.languageCode = this.detectLanguage().languageCode;
       this.pageCache = new Map();
       this.rateLimiter = new RateLimiter(translator);
       this.pdfLoaded = true;
     }
+    getExcludeSelectors() {
+      const settings = this.translator.userSettings.settings.pageTranslation;
+      if (!settings.useCustomSelectors) {
+        return settings.defaultSelectors;
+      }
+      return settings.combineWithDefault
+        ? [
+          ...new Set([
+            ...settings.defaultSelectors,
+            ...settings.customSelectors,
+          ]),
+        ]
+        : settings.customSelectors;
+    }
     async detectLanguage() {
       try {
-        const text = document.body.innerText.slice(0, 1000);
+        let text = "";
+        if (document.body.innerText) {
+          text = document.body.innerText;
+        }
+        if (!text) {
+          const paragraphs = document.querySelectorAll("p");
+          paragraphs.forEach((p) => {
+            text += p.textContent + " ";
+          });
+        }
+        if (!text) {
+          const headings = document.querySelectorAll("h1, h2, h3");
+          headings.forEach((h) => {
+            text += h.textContent + " ";
+          });
+        }
+        if (!text) {
+          text = document.title;
+        }
+        text = text.slice(0, 1000).trim();
+        console.log("text: ", text);
         if (!text.trim()) {
           throw new Error("Không tìm thấy nội dung để phát hiện ngôn ngữ");
         }
@@ -2371,16 +3498,18 @@
           throw new Error("API không khả dụng");
         }
         const response = await this.translator.api.request(prompt);
-        const languageCode = response.trim().toLowerCase();
-        if (languageCode === "vi") {
+        this.languageCode = response.trim().toLowerCase();
+        const targetLanguage =
+          this.translator.userSettings.settings.displayOptions.targetLanguage;
+        if (this.languageCode === targetLanguage) {
           return {
             isVietnamese: true,
-            message: "Trang web đã ở tiếng Việt",
+            message: `Trang web đã ở ngôn ngữ ${targetLanguage}`,
           };
         }
         return {
           isVietnamese: false,
-          message: `Đã phát hiện ngôn ngữ: ${languageCode}`,
+          message: `Đã phát hiện ngôn ngữ: ${this.languageCode}`,
         };
       } catch (error) {
         console.error("Language detection error:", error);
@@ -2403,7 +3532,37 @@
             message: languageCheck.message,
           };
         }
-        return await this.translatePage();
+        const result = await this.translatePage();
+        if (result.success) {
+          const toolsContainer = document.querySelector(
+            ".translator-tools-container"
+          );
+          if (toolsContainer) {
+            const menuItem = toolsContainer.querySelector(
+              '[data-type="pageTranslate"]'
+            );
+            if (menuItem) {
+              const itemText = menuItem.querySelector(".item-text");
+              if (itemText) {
+                itemText.textContent = this.isTranslated
+                  ? "Bản gốc"
+                  : "Dịch trang";
+              }
+            }
+          }
+          const floatingButton = document.querySelector(
+            ".page-translate-button"
+          );
+          if (floatingButton) {
+            floatingButton.innerHTML = this.isTranslated
+              ? "📄 Bản gốc"
+              : "📄 Dịch trang";
+          }
+          this.translator.ui.showNotification(result.message, "success");
+        } else {
+          this.translator.ui.showNotification(result.message, "warning");
+        }
+        return result;
       } catch (error) {
         console.error("Translation check error:", error);
         return {
@@ -2414,11 +3573,18 @@
     }
     async translatePage() {
       try {
-        if (!document.body) {
-          throw new Error("Trang web chưa load xong");
+        if (!this.domObserver) {
+          this.setupDOMObserver();
+          // this.domObserver.disconnect();
+          // this.domObserver = null;
         }
         if (this.isTranslated) {
-          this.restoreOriginalText();
+          for (const [node, originalText] of this.originalTexts.entries()) {
+            if (node && node.parentNode) {
+              node.textContent = originalText;
+            }
+          }
+          this.originalTexts.clear();
           this.isTranslated = false;
           this.updateUI("Dịch trang", "📄 Dịch trang");
           return {
@@ -2433,42 +3599,66 @@
             message: "Không tìm thấy nội dung cần dịch",
           };
         }
+        const settings = this.translator.userSettings.settings.displayOptions;
+        const mode = settings.translationMode;
+        const showSource = settings.languageLearning.showSource;
         const chunks = this.createChunks(textNodes);
-        const totalChunks = chunks.length;
-        const settings = this.translator.userSettings.settings;
-        const provider = settings.apiProvider;
-        const availableKeys = settings.apiKey[provider].filter((key) => {
-          const failedInfo = this.translator.api.keyManager.failedKeys.get(key);
-          return !failedInfo || Date.now() - failedInfo.timestamp >= 60000;
-        });
-        if (availableKeys.length === 0) {
-          throw new Error("Không có API key khả dụng");
-        }
-        const chunkGroups = this.distributeChunks(chunks, availableKeys.length);
-        const results = await Promise.allSettled(
-          chunkGroups.map((group, index) =>
-            this.translateChunkGroup(group, availableKeys[index]),
-          ),
-        );
-        let completedChunks = 0;
-        let failedChunks = 0;
-        results.forEach((result, index) => {
-          if (result.status === "fulfilled") {
-            completedChunks += chunkGroups[index].length;
-          } else {
-            failedChunks += chunkGroups[index].length;
-            console.error(`Group ${index} failed:`, result.reason);
+        for (const chunk of chunks) {
+          const textsToTranslate = chunk
+            .map((node) => node.textContent.trim())
+            .filter((text) => text.length > 0)
+            .join("\n");
+          if (!textsToTranslate) continue;
+          try {
+            const prompt = this.translator.createPrompt(
+              textsToTranslate,
+              "page"
+            );
+            const translatedText = await this.translator.api.request(prompt);
+            if (translatedText) {
+              const translatedParts = translatedText.split("\n");
+              let translationIndex = 0;
+              for (let i = 0; i < chunk.length; i++) {
+                const node = chunk[i];
+                const text = node.textContent.trim();
+                if (text.length > 0 && node.parentNode) {
+                  this.originalTexts.set(node, node.textContent);
+                  if (translationIndex < translatedParts.length) {
+                    let translated =
+                      translatedParts[translationIndex++] || node.textContent;
+                    let output = "";
+                    if (mode === "translation_only") {
+                      output = translated;
+                    } else if (mode === "parallel") {
+                      output = `[GỐC]: ${text}  [DỊCH]: ${translated}   `;
+                    } else if (mode === "language_learning") {
+                      let sourceHTML = "";
+                      if (showSource) {
+                        sourceHTML = `[GỐC]: ${text}`;
+                      }
+                      let pinyinHTML = "";
+                      const pinyin = translated.split("<|>")[1]?.trim();
+                      if (pinyin) {
+                        pinyinHTML = `[PINYIN]: ${pinyin}`;
+                      }
+                      const translation =
+                        translated.split("<|>")[2]?.trim() || translated;
+                      const translationHTML = `[DỊCH]: ${translation}`;
+                      output = `${sourceHTML} ${pinyinHTML} ${translationHTML}   `;
+                    }
+                    node.textContent = output;
+                  }
+                }
+              }
+            }
+          } catch (error) {
+            console.error("Error translating chunk:", error);
           }
-        });
+        }
         this.isTranslated = true;
-        this.updateUI("Văn bản gốc", "📄 Văn bản gốc");
         return {
           success: true,
-          completed: completedChunks,
-          failed: failedChunks,
-          total: totalChunks,
-          message: `Đã dịch xong ${completedChunks}/${totalChunks} phần${failedChunks > 0 ? `, ${failedChunks} phần thất bại` : ""
-            }`,
+          message: "Đã dịch xong trang",
         };
       } catch (error) {
         console.error("Page translation error:", error);
@@ -2484,7 +3674,6 @@
     - tone: professional/friendly/neutral/academic
     - domain: general/technical/business/academic/other
     Text: "${text}"`;
-
       try {
         const analysis = await this.translator.api.request(prompt);
         const result = JSON.parse(analysis);
@@ -2547,7 +3736,9 @@
         .join("\n");
       if (!textsToTranslate) return false;
       try {
+        const settings = this.translator.userSettings.settings;
         const selectedModel = this.translator.api.getGeminiModel();
+        const prompt = this.translator.createPrompt(textsToTranslate, "page");
         const response = await new Promise((resolve, reject) => {
           GM_xmlhttpRequest({
             method: "POST",
@@ -2558,15 +3749,15 @@
                 {
                   parts: [
                     {
-                      text: `Dịch sang tiếng Việt (Vietnamese), thật tự nhiên, đúng ngữ cảnh, giữ nguyên định dạng phông chữ ban đầu, chỉ trả về bản dịch, không giải thích thêm: "${textsToTranslate}"`,
+                      text: prompt,
                     },
                   ],
                 },
               ],
               generationConfig: {
-                temperature: 0.1,
-                topP: 0.1,
-                topK: 1,
+                temperature: settings.ocrOptions.temperature,
+                topP: settings.ocrOptions.topP,
+                topK: settings.ocrOptions.topK,
               },
             }),
             onload: (response) => {
@@ -2608,23 +3799,14 @@
     }
     async translateHTML(htmlContent) {
       try {
-        // Tạo DOM parser
         const parser = new DOMParser();
         const doc = parser.parseFromString(htmlContent, "text/html");
-
-        // Loại bỏ các script và style
         const scripts = doc.getElementsByTagName("script");
         const styles = doc.getElementsByTagName("style");
         [...scripts, ...styles].forEach((element) => element.remove());
-
-        // Thu thập các node cần dịch
         const translatableNodes = this.getTranslatableHTMLNodes(doc.body);
         const chunks = this.createHTMLChunks(translatableNodes);
-
-        // Hiển thị trạng thái
         this.translator.ui.showTranslatingStatus();
-
-        // Dịch từng chunk
         for (const chunk of chunks) {
           const textsToTranslate = chunk.nodes.map((node) => ({
             text: node.textContent.trim(),
@@ -2632,27 +3814,23 @@
             isAttribute: node.isAttribute,
             attributeName: node.attributeName,
           }));
-
-          const prompt = `Dịch các đoạn văn bản sau sang tiếng Việt, giữ nguyên format và ý nghĩa:
-                ${textsToTranslate.map((item) => item.text).join("\n---\n")}`;
-
+          const textJoin = `${textsToTranslate
+            .map((item) => item.text)
+            .join("\n---\n")}`;
+          const prompt = this.translator.createPrompt(textJoin, "page");
           const translation = await this.translator.api.request(prompt);
           const translatedTexts = translation.split("\n---\n");
-
-          // Cập nhật nội dung đã dịch
           chunk.nodes.forEach((node, index) => {
             if (node.isAttribute) {
               node.ownerElement.setAttribute(
                 node.attributeName,
-                translatedTexts[index].trim(),
+                translatedTexts[index].trim()
               );
             } else {
               node.textContent = translatedTexts[index].trim();
             }
           });
         }
-
-        // Trả về HTML đã dịch
         return doc.documentElement.outerHTML;
       } catch (error) {
         console.error("Lỗi dịch HTML:", error);
@@ -2661,46 +3839,27 @@
         this.translator.ui.removeTranslatingStatus();
       }
     }
-
     getTranslatableHTMLNodes(element) {
       const translatableNodes = [];
-      const excludeSelectors = [
-        "script",
-        "style",
-        "noscript",
-        "code",
-        "pre",
-        ".notranslate",
-        '[translate="no"]',
-      ];
-
-      // Tìm tất cả text nodes
+      const excludeSelectors = this.getExcludeSelectors();
       const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, {
         acceptNode: (node) => {
           const parent = node.parentElement;
           if (!parent) return NodeFilter.FILTER_REJECT;
-
-          // Kiểm tra các selector loại trừ
           if (excludeSelectors.some((selector) => parent.matches?.(selector))) {
             return NodeFilter.FILTER_REJECT;
           }
-
-          // Chấp nhận node nếu có nội dung
           return node.textContent.trim()
             ? NodeFilter.FILTER_ACCEPT
             : NodeFilter.FILTER_REJECT;
         },
       });
-
       let node;
       while ((node = walker.nextNode())) {
         translatableNodes.push(node);
       }
-
-      // Tìm các thuộc tính cần dịch
       const elements = element.getElementsByTagName("*");
       const translatableAttributes = ["title", "alt", "placeholder"];
-
       for (const el of elements) {
         for (const attr of translatableAttributes) {
           if (el.hasAttribute(attr)) {
@@ -2715,17 +3874,13 @@
           }
         }
       }
-
       return translatableNodes;
     }
-
     createHTMLChunks(nodes, maxChunkSize = 1000) {
       const chunks = [];
       let currentChunk = { nodes: [], size: 0 };
-
       for (const node of nodes) {
         const textLength = node.textContent.length;
-
         if (currentChunk.size + textLength > maxChunkSize) {
           if (currentChunk.nodes.length > 0) {
             chunks.push(currentChunk);
@@ -2736,106 +3891,152 @@
           currentChunk.size += textLength;
         }
       }
-
       if (currentChunk.nodes.length > 0) {
         chunks.push(currentChunk);
       }
-
       return chunks;
     }
     async loadPDFJS() {
       if (!this.pdfLoaded) {
-        pdfjsLib.GlobalWorkerOptions.workerSrc = window.pdfjsWorker;
+        pdfjsLib.GlobalWorkerOptions.workerSrc =
+          "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
         this.pdfLoaded = true;
       }
     }
     async translatePDF(file) {
       try {
         await this.loadPDFJS();
-
         const arrayBuffer = await file.arrayBuffer();
         const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-
         let translatedContent = [];
         const totalPages = pdf.numPages;
-
-        // Tạo canvas để render PDF
         const canvas = document.createElement("canvas");
         const ctx = canvas.getContext("2d");
-
         for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
           const page = await pdf.getPage(pageNum);
-
-          // Lấy viewport
-          const viewport = page.getViewport({ scale: 2.0 }); // Scale 2.0 để chất lượng ảnh tốt hơn
-
-          // Set canvas size
+          const viewport = page.getViewport({ scale: 2.0 }); // Scale 2x để chất lượng tốt hơn
           canvas.height = viewport.height;
           canvas.width = viewport.width;
-
-          // Render page to canvas
           await page.render({
             canvasContext: ctx,
             viewport: viewport,
           }).promise;
-
-          // Convert canvas to image file
-          const imageBlob = await new Promise((resolve) => {
-            canvas.toBlob(resolve, "image/png");
-          });
+          const imageBlob = await new Promise((resolve) =>
+            canvas.toBlob(resolve, "image/png")
+          );
           const imageFile = new File([imageBlob], "page.png", {
             type: "image/png",
           });
-
-          // OCR trang PDF đã được convert sang ảnh
           try {
-            // Sử dụng OCR từ translator instance
             const ocrResult = await this.translator.ocr.processImage(imageFile);
-
-            // Nếu có kết quả OCR, thực hiện dịch
             if (ocrResult && ocrResult.trim()) {
-              const translated = await this.translator.api.request(
-                `Dịch sang tiếng Việt, giữ nguyên format và ý nghĩa: "${ocrResult}"`,
-              );
-
+              const prompt = this.translator.createPrompt(ocrResult, "page");
+              const translated = await this.translator.api.request(prompt);
               translatedContent.push({
                 pageNum,
                 original: ocrResult,
-                translated: translated,
+                translated,
               });
-            } else {
-              throw new Error("Không nhận diện được text");
             }
           } catch (error) {
             console.error(`Error processing page ${pageNum}:`, error);
             translatedContent.push({
               pageNum,
-              original: `[OCR Error on page ${pageNum}: ${error.message}]`,
-              translated: `[Translation Error on page ${pageNum}: ${error.message}]`,
+              original: `[Error on page ${pageNum}: ${error.message}]`,
+              translated: `[Translation Error: ${error.message}]`,
             });
           }
-
-          // Cập nhật tiến độ
           this.translator.ui.updateProgress(
             "Đang xử lý PDF",
-            Math.round((pageNum / totalPages) * 100),
+            Math.round((pageNum / totalPages) * 100)
           );
-
-          // Clear canvas cho trang tiếp theo
           ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
-
-        // Cleanup
         canvas.remove();
-
-        // Generate output HTML
-        return this.generateTranslatedPDF(translatedContent);
+        return this.generateEnhancedTranslatedPDF(translatedContent);
       } catch (error) {
-        console.error("Lỗi xử lý PDF:", error);
+        console.error("PDF translation error:", error);
         throw error;
       }
     }
-
+    generateEnhancedTranslatedPDF(translatedContent) {
+      const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+          }
+          .page {
+            margin-bottom: 40px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            page-break-after: always;
+          }
+          .page-number {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #666;
+          }
+          .content {
+            margin-bottom: 20px;
+          }
+          .original {
+            color: #666;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 5px;
+            white-space: pre-wrap;
+          }
+          .translated {
+            color: #000;
+            padding: 15px;
+            background: #fff;
+            border: 1px solid #eee;
+            border-radius: 5px;
+            white-space: pre-wrap;
+          }
+          h3 {
+            color: #333;
+            margin: 10px 0;
+          }
+          @media print {
+            .page {
+              page-break-after: always;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        ${translatedContent
+          .map(
+            (page) => `
+          <div class="page">
+            <div class="page-number">Trang ${page.pageNum}</div>
+            <div class="content">
+              <h3>Bản gốc:</h3>
+              <div class="original">${page.original}</div>
+              <h3>Bản dịch:</h3>
+              <div class="translated">${page.translated}</div>
+            </div>
+          </div>
+        `
+          )
+          .join("")}
+      </body>
+      </html>
+    `;
+      return new Blob([htmlContent], { type: "text/html" });
+    }
     generateTranslatedPDF(translatedContent) {
       const htmlContent = `
             <!DOCTYPE html>
@@ -2895,22 +4096,20 @@
                     <div class="page">
                         <div class="page-number">Trang ${page.pageNum}</div>
                         <div class="content">
-                            <h3>Văn bản gốc:</h3>
+                            <h3>Bản gốc:</h3>
                             <div class="original">${page.original}</div>
                             <h3>Bản dịch:</h3>
                             <div class="translated">${page.translated}</div>
                         </div>
                     </div>
-                `,
+                `
           )
           .join("")}
             </body>
             </html>
         `;
-
       return new Blob([htmlContent], { type: "text/html" });
     }
-
     groupIntoParagraphs(textItems) {
       let paragraphs = [];
       let currentParagraph = {
@@ -2918,37 +4117,27 @@
         format: {},
         type: "text",
       };
-
       for (let i = 0; i < textItems.length; i++) {
         const item = textItems[i];
         const nextItem = textItems[i + 1];
-
-        // Xác định loại nội dung
         if (item.fontSize > 20) {
           currentParagraph.type = "heading";
         } else if (item.text.match(/^\d+\./)) {
           currentParagraph.type = "list-item";
         }
-
-        // Thêm text vào paragraph hiện tại
         currentParagraph.text += item.text;
-
-        // Lưu thông tin định dạng
         currentParagraph.format = {
           fontSize: item.fontSize,
           fontFamily: item.fontFamily,
           isAnnotation: item.type === "annotation",
         };
-
-        // Kiểm tra điều kiện kết thúc paragraph
         const shouldEndParagraph =
-          !nextItem || // Hết items
+          !nextItem ||
           Math.abs(nextItem.y - item.y) > 1.5 * item.fontSize || // Khoảng cách dọc lớn
           (nextItem.fontSize > 20 && item.fontSize <= 20) || // Chuyển từ text thường sang heading
           item.text.endsWith(".") || // Kết thúc câu
           item.text.endsWith("?") ||
           item.text.endsWith("!");
-
         if (shouldEndParagraph) {
           if (currentParagraph.text.trim()) {
             paragraphs.push({ ...currentParagraph });
@@ -2962,102 +4151,12 @@
           currentParagraph.text += " ";
         }
       }
-
       return paragraphs;
     }
-
-    generateEnhancedTranslatedPDF(translatedContent) {
-      const htmlContent = `
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8">
-                <style>
-                    body {
-                        font-family: Arial, sans-serif;
-                        line-height: 1.6;
-                        max-width: 900px;
-                        margin: 0 auto;
-                        padding: 20px;
-                    }
-                    .page {
-                        margin-bottom: 40px;
-                        padding: 20px;
-                        border: 1px solid #ddd;
-                        border-radius: 5px;
-                    }
-                    .page-number {
-                        font-size: 18px;
-                        font-weight: bold;
-                        margin-bottom: 20px;
-                        color: #666;
-                    }
-                    .paragraph {
-                        margin-bottom: 20px;
-                        padding: 15px;
-                        background: #f9f9f9;
-                        border-radius: 5px;
-                    }
-                    .original {
-                        color: #666;
-                        margin-bottom: 10px;
-                        padding-bottom: 10px;
-                        border-bottom: 1px solid #eee;
-                    }
-                    .translated {
-                        color: #000;
-                    }
-                    .heading {
-                        font-size: 1.5em;
-                        font-weight: bold;
-                        color: #2c3e50;
-                    }
-                    .list-item {
-                        margin-left: 20px;
-                    }
-                    .annotation {
-                        font-style: italic;
-                        color: #666;
-                    }
-                    @media print {
-                        .page {
-                            page-break-after: always;
-                        }
-                    }
-                </style>
-            </head>
-            <body>
-                ${translatedContent
-          .map(
-            (page) => `
-                    <div class="page">
-                        <div class="page-number">Trang ${page.pageNum}</div>
-                        ${page.content
-                .map(
-                  (para) => `
-                            <div class="paragraph ${para.type}">
-                                <div class="original">${para.original}</div>
-                                <div class="translated">${para.translated}</div>
-                            </div>
-                        `,
-                )
-                .join("")}
-                    </div>
-                `,
-          )
-          .join("")}
-            </body>
-            </html>
-        `;
-
-      return new Blob([htmlContent], { type: "text/html" });
-    }
-
     splitIntoChunks(text, maxLength = 1000) {
       const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
       const chunks = [];
       let currentChunk = "";
-
       for (const sentence of sentences) {
         if ((currentChunk + sentence).length > maxLength && currentChunk) {
           chunks.push(currentChunk.trim());
@@ -3065,11 +4164,9 @@
         }
         currentChunk += sentence + " ";
       }
-
       if (currentChunk) {
         chunks.push(currentChunk.trim());
       }
-
       return chunks;
     }
     rateLimiter = {
@@ -3094,11 +4191,11 @@
     };
     updateUI(menuText, buttonText) {
       const toolsContainer = document.querySelector(
-        ".translator-tools-container",
+        ".translator-tools-container"
       );
       if (toolsContainer) {
         const menuItem = toolsContainer.querySelector(
-          '[data-type="pageTranslate"]',
+          '[data-type="pageTranslate"]'
         );
         if (menuItem) {
           const itemText = menuItem.querySelector(".item-text");
@@ -3147,14 +4244,16 @@
       });
     }
     collectTextNodes() {
-      const settings = this.translator.userSettings.settings;
-      const excludeSelectors = settings.pageTranslation.excludeSelectors;
+      const excludeSelectors = this.getExcludeSelectors();
       const walker = document.createTreeWalker(
         document.body,
         NodeFilter.SHOW_TEXT,
         {
           acceptNode: (node) => {
             if (!node.textContent.trim()) {
+              return NodeFilter.FILTER_REJECT;
+            }
+            if (!node.parentNode) {
               return NodeFilter.FILTER_REJECT;
             }
             let parent = node.parentElement;
@@ -3179,7 +4278,7 @@
             }
             return NodeFilter.FILTER_ACCEPT;
           },
-        },
+        }
       );
       const nodes = [];
       let node;
@@ -3211,6 +4310,157 @@
       }
       return chunks;
     }
+    setupDOMObserver() {
+      if (this.domObserver) {
+        this.domObserver.disconnect();
+        this.domObserver = null;
+      }
+      this.domObserver = new MutationObserver((mutations) => {
+        const newTextNodes = [];
+        for (const mutation of mutations) {
+          if (mutation.type === "childList" && mutation.addedNodes.length > 0) {
+            const nodes = this.getTextNodesFromNodeList(mutation.addedNodes);
+            if (nodes.length > 0) {
+              newTextNodes.push(...nodes);
+            }
+          }
+        }
+        if (newTextNodes.length > 0) {
+          const chunks = this.createChunks(newTextNodes);
+          Promise.all(
+            chunks.map((chunk) =>
+              this.translateChunkParallel(chunk).catch((error) => {
+                console.error("Translation error for chunk:", error);
+              })
+            )
+          );
+        }
+      });
+      this.domObserver.observe(document.body, {
+        childList: true,
+        subtree: true,
+        characterData: true,
+      });
+    }
+    getTextNodesFromNodeList(nodeList) {
+      const excludeSelectors = this.getExcludeSelectors();
+      const textNodes = [];
+      const shouldExclude = (node) => {
+        if (!node) return true;
+        let current = node;
+        while (current) {
+          if (
+            current.getAttribute &&
+            (current.getAttribute("translate") === "no" ||
+              current.getAttribute("data-notranslate") ||
+              current.classList?.contains("notranslate") ||
+              current.classList?.contains("no-translate"))
+          ) {
+            return true;
+          }
+          for (const selector of excludeSelectors) {
+            try {
+              if (current.matches && current.matches(selector)) {
+                return true;
+              }
+            } catch (e) {
+              console.warn(`Invalid selector: ${selector}`, e);
+            }
+          }
+          current = current.parentElement;
+        }
+        return false;
+      };
+      nodeList.forEach((node) => {
+        if (node.nodeType === Node.TEXT_NODE) {
+          if (node.textContent.trim() && !shouldExclude(node.parentElement)) {
+            textNodes.push(node);
+          }
+        } else if (
+          node.nodeType === Node.ELEMENT_NODE &&
+          !shouldExclude(node)
+        ) {
+          const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT, {
+            acceptNode: (textNode) => {
+              if (
+                textNode.textContent.trim() &&
+                !shouldExclude(textNode.parentElement)
+              ) {
+                return NodeFilter.FILTER_ACCEPT;
+              }
+              return NodeFilter.FILTER_REJECT;
+            },
+          });
+          let textNode;
+          while ((textNode = walker.nextNode())) {
+            textNodes.push(textNode);
+          }
+        }
+      });
+      return textNodes;
+    }
+    async translateChunkParallel(chunk) {
+      try {
+        const textsToTranslate = chunk
+          .map((node) => node.textContent.trim())
+          .filter((text) => text.length > 0)
+          .join("\n");
+        if (!textsToTranslate) return;
+        const prompt = this.translator.createPrompt(textsToTranslate, "page");
+        const translatedText = await this.translator.api.request(prompt);
+        if (translatedText) {
+          const translatedParts = translatedText.split("\n");
+          let translationIndex = 0;
+          for (let i = 0; i < chunk.length; i++) {
+            const node = chunk[i];
+            const text = node.textContent.trim();
+            if (text.length > 0 && node.parentNode) {
+              this.originalTexts.set(node, node.textContent);
+              if (translationIndex < translatedParts.length) {
+                const translated = translatedParts[translationIndex++];
+                const settings =
+                  this.translator.userSettings.settings.displayOptions;
+                const mode = settings.translationMode;
+                let output = this.formatTranslation(
+                  text,
+                  translated,
+                  mode,
+                  settings
+                );
+                node.textContent = output;
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Chunk translation error:", error);
+        throw error;
+      }
+    }
+    formatTranslation(originalText, translatedText, mode, settings) {
+      const showSource = settings.languageLearning.showSource;
+      switch (mode) {
+        case "translation_only":
+          return translatedText;
+        case "parallel":
+          return `[GỐC]: ${originalText}  [DỊCH]: ${translatedText}   `;
+        case "language_learning":
+          let parts = [];
+          if (showSource) {
+            parts.push(`[GỐC]: ${originalText}`);
+          }
+          const pinyin = translatedText.split("<|>")[1]?.trim();
+          if (pinyin) {
+            parts.push(`[PINYIN]: ${pinyin}`);
+          }
+          const translation =
+            translatedText.split("<|>")[2]?.trim() || translatedText;
+          parts.push(`[DỊCH]: ${translation}   `);
+          return parts.join("  ");
+        default:
+          return translatedText;
+      }
+    }
   }
   class ImageCache {
     constructor() {
@@ -3222,7 +4472,7 @@
     async generateKey(imageData) {
       const hashBuffer = await crypto.subtle.digest(
         "SHA-256",
-        new TextEncoder().encode(imageData),
+        new TextEncoder().encode(imageData)
       );
       const hashArray = Array.from(new Uint8Array(hashBuffer));
       return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
@@ -3275,7 +4525,7 @@
     async generateKey(fileData) {
       const hashBuffer = await crypto.subtle.digest(
         "SHA-256",
-        new TextEncoder().encode(fileData),
+        new TextEncoder().encode(fileData)
       );
       const hashArray = Array.from(new Uint8Array(hashBuffer));
       return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
@@ -3325,11 +4575,11 @@
       this.cache = new Map();
       this.accessOrder = [];
     }
-    generateKey(text, isAdvanced) {
-      return `${text}_${isAdvanced}`;
+    generateKey(text, isAdvanced, targetLanguage) {
+      return `${text}_${isAdvanced}_${targetLanguage}`;
     }
-    set(text, translation, isAdvanced) {
-      const key = this.generateKey(text, isAdvanced);
+    set(text, translation, isAdvanced, targetLanguage) {
+      const key = this.generateKey(text, isAdvanced, targetLanguage);
       if (this.cache.has(key)) {
         const index = this.accessOrder.indexOf(key);
         this.accessOrder.splice(index, 1);
@@ -3346,8 +4596,8 @@
         timestamp: Date.now(),
       });
     }
-    get(text, isAdvanced) {
-      const key = this.generateKey(text, isAdvanced);
+    get(text, isAdvanced, targetLanguage) {
+      const key = this.generateKey(text, isAdvanced, targetLanguage);
       const data = this.cache.get(key);
       if (!data) return null;
       if (Date.now() - data.timestamp > this.expirationTime) {
@@ -3369,31 +4619,25 @@
       if (this.cache.size > this.maxSize * 0.9) {
         const itemsToKeep = Math.floor(this.maxSize * 0.7);
         const sortedItems = [...this.accessOrder].slice(-itemsToKeep);
-
         const tempCache = new Map();
         sortedItems.forEach((key) => {
           if (this.cache.has(key)) {
             tempCache.set(key, this.cache.get(key));
           }
         });
-
         this.cache = tempCache;
         this.accessOrder = sortedItems;
       }
     }
-
     async initDB() {
       if (!window.indexedDB) {
         console.warn("IndexedDB not supported");
         return;
       }
-
       return new Promise((resolve, reject) => {
         const request = indexedDB.open("translatorCache", 1);
-
         request.onerror = () => reject(request.error);
         request.onsuccess = () => resolve(request.result);
-
         request.onupgradeneeded = (event) => {
           const db = event.target.result;
           if (!db.objectStoreNames.contains("translations")) {
@@ -3402,275 +4646,25 @@
         };
       });
     }
-
     async saveToIndexedDB(key, value) {
       const db = await this.initDB();
       return new Promise((resolve, reject) => {
         const transaction = db.transaction(["translations"], "readwrite");
         const store = transaction.objectStore("translations");
         const request = store.put({ id: key, value, timestamp: Date.now() });
-
         request.onsuccess = () => resolve();
         request.onerror = () => reject(request.error);
       });
     }
-
     async loadFromIndexedDB(key) {
       const db = await this.initDB();
       return new Promise((resolve, reject) => {
         const transaction = db.transaction(["translations"], "readonly");
         const store = transaction.objectStore("translations");
         const request = store.get(key);
-
         request.onsuccess = () => resolve(request.result?.value);
         request.onerror = () => reject(request.error);
       });
-    }
-  }
-  class APIKeyManager {
-    constructor(settings) {
-      this.settings = settings;
-      this.failedKeys = new Map();
-      this.activeKeys = new Map();
-      this.keyRotationInterval = 60000; // 1 phút
-      this.maxConcurrentRequests = 3; // Số request đồng thời tối đa cho mỗi key
-      this.setupKeyRotation();
-    }
-    markKeyAsFailed(key) {
-      if (!key) return;
-      this.failedKeys.set(key, {
-        timestamp: Date.now(),
-        failures: (this.failedKeys.get(key)?.failures || 0) + 1,
-      });
-      if (this.activeKeys.has(key)) {
-        this.activeKeys.delete(key);
-      }
-    }
-    getAvailableKeys(provider) {
-      const allKeys = this.settings.apiKey[provider];
-      if (!allKeys || allKeys.length === 0) {
-        throw new Error("Không có API key nào được cấu hình");
-      }
-      return allKeys.filter((key) => {
-        if (!key) return false;
-        const failedInfo = this.failedKeys.get(key);
-        const activeInfo = this.activeKeys.get(key);
-        const isFailed =
-          failedInfo && Date.now() - failedInfo.timestamp < 60000;
-        const isBusy =
-          activeInfo && activeInfo.requests >= this.maxConcurrentRequests;
-        return !isFailed && !isBusy;
-      });
-    }
-    getRandomKey(provider) {
-      const availableKeys = this.getAvailableKeys(provider);
-      if (availableKeys.length === 0) {
-        throw new Error("Không có API key khả dụng");
-      }
-      return availableKeys[Math.floor(Math.random() * availableKeys.length)];
-    }
-    async useKey(key, action) {
-      let activeInfo = this.activeKeys.get(key) || { requests: 0 };
-      activeInfo.requests++;
-      this.activeKeys.set(key, activeInfo);
-      try {
-        const result = await action();
-        return result;
-      } catch (error) {
-        if (
-          error.message.includes("API key not valid") ||
-          error.message.includes("rate limit") ||
-          error.status === 400 ||
-          error.status === 429
-        ) {
-          this.markKeyAsFailed(key);
-        }
-        throw error;
-      } finally {
-        activeInfo = this.activeKeys.get(key);
-        if (activeInfo) {
-          activeInfo.requests--;
-          if (activeInfo.requests <= 0) {
-            this.activeKeys.delete(key);
-          } else {
-            this.activeKeys.set(key, activeInfo);
-          }
-        }
-      }
-    }
-    async executeWithMultipleKeys(
-      promiseGenerator,
-      provider,
-      maxConcurrent = 3,
-    ) {
-      const availableKeys = this.getAvailableKeys(provider);
-      if (!availableKeys || availableKeys.length === 0) {
-        throw new Error("Không có API key khả dụng");
-      }
-
-      const errors = [];
-      const promises = [];
-      let currentKeyIndex = 0;
-
-      const processNext = async () => {
-        if (currentKeyIndex >= availableKeys.length) return null;
-        const key = availableKeys[currentKeyIndex++];
-
-        try {
-          const result = await this.useKey(key, () => promiseGenerator(key));
-          if (result) return result;
-        } catch (error) {
-          errors.push({ key, error });
-          if (
-            error.message.includes("API key not valid") ||
-            error.message.includes("rate limit")
-          ) {
-            this.markKeyAsFailed(key);
-          }
-          return processNext();
-        }
-      };
-
-      // Chạy nhiều promises song song
-      for (let i = 0; i < Math.min(maxConcurrent, availableKeys.length); i++) {
-        promises.push(processNext());
-      }
-
-      const results = await Promise.allSettled(promises);
-      const successResults = results
-        .filter((r) => r.status === "fulfilled" && r.value)
-        .map((r) => r.value);
-
-      if (successResults.length > 0) {
-        return successResults;
-      }
-
-      throw new Error(
-        `Tất cả API key đều thất bại: ${errors.map((e) => e.error.message).join(", ")}`,
-      );
-    }
-    markKeyAsFailed(key) {
-      this.failedKeys.set(key, {
-        timestamp: Date.now(),
-        failures: (this.failedKeys.get(key)?.failures || 0) + 1,
-      });
-    }
-    setupKeyRotation() {
-      setInterval(() => {
-        const now = Date.now();
-        for (const [key, info] of this.failedKeys.entries()) {
-          if (now - info.timestamp >= 60000) {
-            this.failedKeys.delete(key);
-          }
-        }
-      }, this.keyRotationInterval);
-    }
-  }
-  class APIManager {
-    constructor(config, getSettings) {
-      this.config = config;
-      this.getSettings = getSettings;
-      this.keyManager = new APIKeyManager(getSettings());
-      this.currentProvider = getSettings().apiProvider;
-      this.networkOptimizer = new NetworkOptimizer();
-    }
-    async request(prompt) {
-      const provider = this.config.providers[this.currentProvider];
-      if (!provider) {
-        throw new Error(`Provider ${this.currentProvider} not found`);
-      }
-      let attempts = 0;
-      let lastError;
-      while (attempts < this.config.maxRetries) {
-        try {
-          const key = await this.keyManager.getRandomKey(this.currentProvider);
-          const response = await this.keyManager.useKey(key, () =>
-            this.makeRequest(provider, prompt, key),
-          );
-          return provider.responseParser(response);
-        } catch (error) {
-          console.error(`Attempt ${attempts + 1} failed:`, error);
-          lastError = error;
-          attempts++;
-          if (error.message.includes("rate limit")) {
-            continue;
-          }
-          await new Promise((resolve) =>
-            setTimeout(resolve, this.config.retryDelay * Math.pow(2, attempts)),
-          );
-        }
-      }
-      throw (
-        lastError || new Error("Failed to get translation after all retries")
-      );
-    }
-    async batchRequest(prompts) {
-      return this.keyManager.executeWithMultipleKeys(async (key) => {
-        const results = [];
-        for (const prompt of prompts) {
-          const response = await this.makeRequest(
-            this.config.providers[this.currentProvider],
-            prompt,
-            key,
-          );
-          results.push(response);
-        }
-        return results;
-      }, this.currentProvider);
-    }
-    async makeRequest(provider, prompt, key) {
-      const selectedModel = this.getGeminiModel();
-      return new Promise((resolve, reject) => {
-        GM_xmlhttpRequest({
-          method: "POST",
-          url: `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${key}`,
-          headers: { "Content-Type": "application/json" },
-          data: JSON.stringify({
-            contents: [
-              {
-                parts: [{ text: prompt }],
-              },
-            ],
-            generationConfig: {
-              temperature: this.getSettings().mediaOptions.temperature,
-              topP: this.getSettings().mediaOptions.topP,
-              topK: this.getSettings().mediaOptions.topK,
-            },
-          }),
-          onload: (response) => {
-            if (response.status === 200) {
-              try {
-                const result = JSON.parse(response.responseText);
-                if (result?.candidates?.[0]?.content?.parts?.[0]?.text) {
-                  resolve(result.candidates[0].content.parts[0].text);
-                } else {
-                  reject(new Error("Invalid response format"));
-                }
-              } catch (error) {
-                reject(new Error("Failed to parse response"));
-              }
-            } else {
-              if (response.status === 400) {
-                reject(new Error("API key not valid"));
-              } else if (response.status === 429) {
-                reject(new Error("API key rate limit exceeded"));
-              } else {
-                reject(new Error(`API Error: ${response.status}`));
-              }
-            }
-          },
-          onerror: (error) => reject(error),
-        });
-      });
-    }
-    getGeminiModel() {
-      const settings = this.getSettings();
-      return settings.selectedModel || "gemini-2.0-flash-exp";
-    }
-    markKeyAsFailed(key) {
-      if (this.keyManager) {
-        this.keyManager.markKeyAsFailed(key);
-      }
     }
   }
   class UIManager {
@@ -3685,18 +4679,16 @@
       this.ignoreNextSelectionChange = false;
       this.touchCount = 0;
       this.currentTranslateButton = null;
+      // Khởi tạo trạng thái tools
+      if (localStorage.getItem("translatorToolsEnabled") === null) {
+        localStorage.setItem("translatorToolsEnabled", "true");
+      }
       // Khởi tạo các managers
       this.mobileOptimizer = new MobileOptimizer(this);
       this.ss = new UserSettings(translator);
       this.ocr = new OCRManager(translator);
       this.media = new MediaManager(translator);
       this.page = new PageTranslator(translator);
-      // Khởi tạo trạng thái tools
-      const settings = this.translator.userSettings.settings;
-      const toolsEnabled = settings.translatorToolsEnabled?.enabled;
-      if (localStorage.getItem("translatorToolsEnabled") === null) {
-        localStorage.setItem("translatorToolsEnabled", toolsEnabled.toString());
-      }
       // Bind các methods
       this.handleSettingsShortcut = this.handleSettingsShortcut.bind(this);
       this.handleTranslationShortcuts =
@@ -3730,7 +4722,69 @@
         font-size: 12px;
         opacity: 0.8;
     }
-`);
+    .translation-container {
+        margin: 10px 0;
+        padding: 10px;
+        border-left: 3px solid #4CAF50;
+        background: #f8f9fa;
+        font-family: Arial, sans-serif;
+    }
+    .original-text {
+        color: #333;
+        margin-bottom: 5px;
+        font-size: 15px;
+        line-height: 1.5;
+    }
+    .pinyin-text {
+        color: #666;
+        font-size: 0.9em;
+        margin-bottom: 5px;
+        font-style: italic;
+        line-height: 1.4;
+    }
+      .translated-text {
+          color: #2196F3;
+          font-size: 15px;
+          line-height: 1.5;
+          margin-top: 5px;
+      }
+      /* Dark mode */
+      @media (prefers-color-scheme: dark) {
+          .translation-container {
+              background: #2d2d2d;
+              border-left-color: #66bb6a;
+          }
+          .original-text {
+              color: #e0e0e0;
+          }
+          .pinyin-text {
+              color: #b0b0b0;
+          }
+          .translated-text {
+              color: #64b5f6;
+          }
+      }
+      .translator-settings-container,
+      .translator-tools-container,
+      .translation-div,
+      .draggable,
+      .page-translate-button,
+      .translator-tools-dropdown,
+      .translator-notification,
+      .translator-content,
+      .translator-context-menu,
+      .translator-overlay,
+      .translator-guide,
+      .center-translate-status {
+        z-index: 2147483647 !important;
+      }
+      .translation-div p {
+        margin: 5px 0;
+      }
+      .translation-div strong {
+        font-weight: bold;
+      }
+    `);
       // Gán các listeners
       this.settingsShortcutListener = this.handleSettingsShortcut;
       this.translationShortcutListener = this.handleTranslationShortcuts;
@@ -3771,25 +4825,39 @@
           }
         });
       }
-    }
-    createTranslationDiv(translatedText, originalText) {
-      const div = document.createElement("div");
-      div.classList.add("translation-div");
-      const displayOptions =
-        this.translator.userSettings.settings.displayOptions;
-      Object.assign(div.style, {
-        ...CONFIG.STYLES.translation,
-        fontSize: displayOptions.fontSize,
+      document.addEventListener("DOMContentLoaded", () => {
+        const isEnabled =
+          localStorage.getItem("translatorToolsEnabled") === "true";
+        if (isEnabled) {
+          this.setupTranslatorTools();
+        }
       });
-      if (displayOptions.showOriginalText && originalText) {
-        div.innerHTML = `
-        <div style="margin-bottom: 8px; color: #666;">Gốc: ${originalText}</div>
-        <div>${translatedText}</div>
-      `;
-      } else {
-        div.textContent = `${translatedText}`;
+      setTimeout(() => {
+        if (!document.querySelector(".translator-tools-container")) {
+          const isEnabled =
+            localStorage.getItem("translatorToolsEnabled") === "true";
+          if (isEnabled) {
+            this.setupTranslatorTools();
+          }
+        }
+      }, 1000);
+    }
+    checkOverlap(rect1, rect2) {
+      return !(
+        rect1.right < rect2.left ||
+        rect1.left > rect2.right ||
+        rect1.bottom < rect2.top ||
+        rect1.top > rect2.bottom
+      );
+    }
+    adjustPosition(newRect, existingRects) {
+      let adjusted = { ...newRect };
+      let offset = 0;
+      while (existingRects.some((r) => this.checkOverlap(adjusted, r))) {
+        offset += 5;
+        adjusted.top = newRect.top + offset;
       }
-      return div;
+      return adjusted;
     }
     createCloseButton() {
       const button = document.createElement("span");
@@ -3808,7 +4876,7 @@
       button.onclick = () => button.parentElement.remove();
       return button;
     }
-    showTranslationBelow(targetElement, translatedText) {
+    showTranslationBelow(translatedText, targetElement, text) {
       const selection = window.getSelection();
       const lastSelectedNode = selection.focusNode;
       let lastSelectedParagraph = lastSelectedNode.parentElement;
@@ -3820,17 +4888,41 @@
       }
       if (
         lastSelectedParagraph.nextElementSibling?.classList.contains(
-          "translation-div",
+          "translation-div"
         )
       ) {
         return;
       }
-      const translationDiv = this.createTranslationDiv(translatedText);
+      const settings = this.translator.userSettings.settings.displayOptions;
+      const mode = settings.translationMode;
+      const showSource = settings.languageLearning.showSource;
+      let formattedTranslation = "";
+      if (mode === "translation_only") {
+        formattedTranslation = translatedText;
+      } else if (mode === "parallel") {
+        formattedTranslation = `<div style="margin-bottom: 8px">Gốc: ${text}</div>
+<div>Dịch: ${translatedText.split("<|>")[2] || translatedText}</div>`;
+      } else if (mode === "language_learning") {
+        let sourceHTML = "";
+        if (showSource) {
+          sourceHTML = `<div style="margin-bottom: 8px">[Gốc]: ${text}</div>`;
+        }
+        formattedTranslation = `${sourceHTML}
+<div>[Pinyin]: ${translatedText.split("<|>")[1] || ""}</div>
+<div>[Dịch]: ${translatedText.split("<|>")[2] || translatedText}</div>`;
+      }
+      const translationDiv = document.createElement("div");
+      translationDiv.classList.add("translation-div");
+      Object.assign(translationDiv.style, {
+        ...CONFIG.STYLES.translation,
+        fontSize: settings.fontSize,
+      });
+      translationDiv.innerHTML = formattedTranslation;
       translationDiv.appendChild(this.createCloseButton());
       lastSelectedParagraph.parentNode.appendChild(translationDiv);
       translationDiv.style.cssText = `
         display: block; /* Giữ cho phần dịch không bị kéo dài hết chiều ngang */
-        max-width: fit-content;; /* Giới hạn chiều rộng */
+        max-width: fit-content; /* Giới hạn chiều rộng */
         width: auto; /* Để nó co giãn theo nội dung */
         min-width: 150px;
         background: rgba(242, 240, 235, 0.6);
@@ -3840,15 +4932,22 @@
         font-size: 16px;
         margin-top: 5px;
         position: relative;
-        z-index: 2147483646;
+        z-index: 2147483646 !important;
         border: 1px solid rgba(242, 240, 235, 0.2);
         white-space: normal; /* Cho phép xuống dòng nếu quá dài */
         overflow-wrap: break-word; /* Ngắt từ nếu quá dài */
       `;
     }
-    displayPopup(translatedText, originalText, title = "Bản dịch") {
+    displayPopup(
+      translatedText,
+      originalText,
+      title = "Bản dịch",
+      pinyin = ""
+    ) {
       this.removeTranslateButton();
-      const theme = CONFIG.THEME[CONFIG.THEME.mode];
+      const mode =
+        this.translator.userSettings.settings.theme || CONFIG.THEME.mode;
+      const theme = CONFIG.THEME[mode];
       const displayOptions =
         this.translator.userSettings.settings.displayOptions;
       const popup = document.createElement("div");
@@ -3952,7 +5051,10 @@
         flexDirection: "column",
         gap: "15px",
       });
-      if (displayOptions.showOriginalText && originalText) {
+      if (
+        displayOptions.translationMode == "parallel" &&
+        originalText
+      ) {
         const originalContainer = document.createElement("div");
         Object.assign(originalContainer.style, {
           color: theme.content,
@@ -3964,10 +5066,50 @@
           wordBreak: "break-word",
         });
         originalContainer.innerHTML = `
-      <div style="font-weight: 500; margin-bottom: 5px; color: ${theme.title};">Văn bản gốc:</div>
-      <div style="line-height: 1.5;">${originalText}</div>
+      <div style="font-weight: 500; margin-bottom: 5px; color: ${theme.title};">Bản gốc:</div>
+      <div style="line-height: 1.5;">&nbsp;&nbsp;&nbsp;&nbsp; ${originalText}</div>
     `;
         textContainer.appendChild(originalContainer);
+      }
+      if (
+        displayOptions.translationMode == "language_learning" && displayOptions.languageLearning.showSource === true &&
+        originalText
+      ) {
+        const originalContainer = document.createElement("div");
+        Object.assign(originalContainer.style, {
+          color: theme.content,
+          padding: "10px 15px",
+          backgroundColor: `${theme.background === "#222" ? "#333" : "#f5f5f5"
+            }`,
+          borderRadius: "8px",
+          border: `1px solid ${theme.border}`,
+          wordBreak: "break-word",
+        });
+        originalContainer.innerHTML = `
+      <div style="font-weight: 500; margin-bottom: 5px; color: ${theme.title};">Bản gốc:</div>
+      <div style="line-height: 1.5;">&nbsp;&nbsp;&nbsp;&nbsp; ${originalText}</div>
+    `;
+        textContainer.appendChild(originalContainer);
+      }
+      if (
+        displayOptions.translationMode == "language_learning" &&
+        pinyin
+      ) {
+        const pinyinContainer = document.createElement("div");
+        Object.assign(pinyinContainer.style, {
+          color: theme.content,
+          padding: "10px 15px",
+          backgroundColor: `${theme.background === "#222" ? "#333" : "#f5f5f5"
+            }`,
+          borderRadius: "8px",
+          border: `1px solid ${theme.border}`,
+          wordBreak: "break-word",
+        });
+        pinyinContainer.innerHTML = `
+      <div style="font-weight: 500; margin-bottom: 5px; color: ${theme.title};">Pinyin:</div>
+      <div style="line-height: 1.5;">&nbsp;&nbsp;&nbsp;&nbsp; ${pinyin}</div>
+    `;
+        textContainer.appendChild(pinyinContainer);
       }
       const translationContainer = document.createElement("div");
       Object.assign(translationContainer.style, {
@@ -4057,7 +5199,9 @@
       if (this.currentTranslateButton) {
         this.currentTranslateButton.remove();
       }
-      const theme = CONFIG.THEME[CONFIG.THEME.mode];
+      const mode =
+        this.translator.userSettings.settings.theme || CONFIG.THEME.mode;
+      const theme = CONFIG.THEME[mode];
       const button = document.createElement("button");
       button.textContent = "Dịch";
       Object.assign(button.style, {
@@ -4073,10 +5217,8 @@
       this.setupClickHandlers(selection);
     }
     handleTranslateButtonClick = async (selection, translateType) => {
-      console.log("Starting translation process...");
       try {
         const selectedText = selection.toString().trim();
-        console.log("Selected text:", selectedText);
         if (!selectedText) {
           console.log("No text selected");
           return;
@@ -4087,7 +5229,6 @@
           return;
         }
         this.removeTranslateButton();
-        console.log("Showing loading animation...");
         this.showTranslatingStatus();
         console.log("Starting translation with type:", translateType);
         if (!this.translator) {
@@ -4102,7 +5243,7 @@
               selectedText,
               targetElement,
               false,
-              true,
+              true
             );
             break;
           case "advanced":
@@ -4148,7 +5289,7 @@
             color: white;
             padding: 15px 25px;
             border-radius: 8px;
-            z-index: 2147483647;
+            z-index: 2147483647 !important;
             display: flex;
             align-items: center;
             gap: 12px;
@@ -4284,7 +5425,7 @@
                   e.preventDefault();
                   await this.handleTranslateButtonClick(
                     selection,
-                    twoFingersType,
+                    twoFingersType
                   );
                 }
               }
@@ -4298,7 +5439,7 @@
                   e.preventDefault();
                   await this.handleTranslateButtonClick(
                     selection,
-                    threeFingersType,
+                    threeFingersType
                   );
                 }
               }
@@ -4337,16 +5478,15 @@
     }
     toggleTranslatorTools() {
       if (this.isTogglingTools) return;
-
       this.isTogglingTools = true;
       try {
-        const currentState = localStorage.getItem("translatorToolsEnabled") === "true";
+        const currentState =
+          localStorage.getItem("translatorToolsEnabled") === "true";
         const newState = !currentState;
         localStorage.setItem("translatorToolsEnabled", newState.toString());
         const settings = this.translator.userSettings.settings;
-        settings.translatorToolsEnabled.enabled = newState;
+        settings.showTranslatorTools.enabled = newState;
         this.translator.userSettings.saveSettings();
-        this.removeToolsListeners();
         this.removeToolsContainer();
         this.removeAllProcessingIndicators();
         this.resetState();
@@ -4362,22 +5502,6 @@
         setTimeout(() => {
           this.isTogglingTools = false;
         }, 350);
-      }
-    }
-    removeToolsListeners() {
-      document.removeEventListener("mouseover", this.handleImageHover);
-      document.removeEventListener("mouseout", this.handleImageLeave);
-      document.removeEventListener("click", this.handleImageClick);
-      document.removeEventListener("click", this.handleClickOutside);
-      if (this.webMediaListeners) {
-        Object.values(this.webMediaListeners).forEach((listener) => {
-          if (typeof listener === "function") {
-            document.removeEventListener("click", listener);
-            document.removeEventListener("mouseover", listener);
-            document.removeEventListener("mouseout", listener);
-          }
-        });
-        this.webMediaListeners = null;
       }
     }
     removeToolsContainer() {
@@ -4412,27 +5536,27 @@
         const result = await this.page.translatePage();
         if (result.success) {
           const toolsContainer = document.querySelector(
-            ".translator-tools-container",
+            ".translator-tools-container"
           );
           if (toolsContainer) {
             const menuItem = toolsContainer.querySelector(
-              '[data-type="pageTranslate"]',
+              '[data-type="pageTranslate"]'
             );
             if (menuItem) {
               const itemText = menuItem.querySelector(".item-text");
               if (itemText) {
                 itemText.textContent = this.page.isTranslated
-                  ? "Văn bản gốc"
+                  ? "Bản gốc"
                   : "Dịch trang";
               }
             }
           }
           const floatingButton = document.querySelector(
-            ".page-translate-button",
+            ".page-translate-button"
           );
           if (floatingButton) {
             floatingButton.innerHTML = this.page.isTranslated
-              ? "📄 Văn bản gốc"
+              ? "📄 Bản gốc"
               : "📄 Dịch trang";
           }
           this.showNotification(result.message, "success");
@@ -4440,6 +5564,7 @@
           this.showNotification(result.message, "warning");
         }
       } catch (error) {
+        console.error("Page translation error:", error);
         this.showNotification(error.message, "error");
       } finally {
         this.removeTranslatingStatus();
@@ -4455,7 +5580,7 @@
         position: fixed;
         bottom: 20px;
         left: 20px;
-        z-index: 2147483646;
+        z-index: 2147483646 !important;
         padding: 8px 16px;
         background-color: #4CAF50;
         color: white;
@@ -4475,32 +5600,36 @@
       const button = document.createElement("button");
       button.className = "page-translate-button";
       button.innerHTML = this.page.isTranslated
-        ? "📄 Văn bản gốc"
+        ? "📄 Bản gốc"
         : "📄 Dịch trang";
       button.onclick = async () => {
         try {
           this.showTranslatingStatus();
           const result = await this.page.translatePage();
           if (result.success) {
-            this.showNotification(result.message, "success");
+            button.innerHTML = this.page.isTranslated
+              ? "📄 Bản gốc"
+              : "📄 Dịch trang";
             const toolsContainer = document.querySelector(
-              ".translator-tools-container",
+              ".translator-tools-container"
             );
             if (toolsContainer) {
               const menuItem = toolsContainer.querySelector(
-                '.translator-tools-item[data-type="pageTranslate"]',
+                '[data-type="pageTranslate"]'
               );
-              if (menuItem) {
+              if (menuItem && menuItem.querySelector(".item-text")) {
                 menuItem.querySelector(".item-text").textContent = this.page
                   .isTranslated
-                  ? "Văn bản gốc"
+                  ? "Bản gốc"
                   : "Dịch trang";
               }
             }
+            this.showNotification(result.message, "success");
           } else {
             this.showNotification(result.message, "warning");
           }
         } catch (error) {
+          console.error("Page translation error:", error);
           this.showNotification(error.message, "error");
         } finally {
           this.removeTranslatingStatus();
@@ -4530,14 +5659,45 @@
     setupTranslatorTools() {
       const isEnabled =
         localStorage.getItem("translatorToolsEnabled") === "true";
-      this.removeToolsListeners();
-      this.removeToolsContainer();
       if (!isEnabled) return;
       if (document.querySelector(".translator-tools-container")) {
         return;
       }
+      this.removeToolsContainer();
+      bypassCSP();
+      const observer = new MutationObserver(() => {
+        const container = document.querySelector(".translator-tools-container");
+        if (
+          !container ||
+          container.style.display === "none" ||
+          container.style.visibility === "hidden"
+        ) {
+          this.createToolsContainer();
+        }
+      });
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ["style", "class"],
+      });
+      this.createToolsContainer();
+    }
+    createToolsContainer() {
+      this.removeToolsContainer();
       const container = document.createElement("div");
       container.className = "translator-tools-container";
+      container.style.cssText = `
+    position: fixed !important;
+    bottom: 20px !important;
+    right: 20px !important;
+    z-index: 2147483646 !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  `;
+      container.setAttribute("data-permanent", "true");
+      container.setAttribute("data-translator-tool", "true");
       this.handleOCRInput = async (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -4590,7 +5750,7 @@
       if (settings.pageTranslation?.enabled) {
         menuItems.push({
           icon: "📄",
-          text: this.page.isTranslated ? "Văn bản gốc" : "Dịch trang",
+          text: this.page.isTranslated ? "Bản gốc" : "Dịch trang",
           "data-type": "pageTranslate",
           handler: async () => {
             try {
@@ -4599,13 +5759,13 @@
               const result = await this.page.translatePage();
               if (result.success) {
                 const menuItem = dropdown.querySelector(
-                  '[data-type="pageTranslate"]',
+                  '[data-type="pageTranslate"]'
                 );
                 if (menuItem) {
                   const itemText = menuItem.querySelector(".item-text");
                   if (itemText) {
                     itemText.textContent = this.page.isTranslated
-                      ? "Văn bản gốc"
+                      ? "Bản gốc"
                       : "Dịch trang";
                   }
                 }
@@ -4663,6 +5823,14 @@
               this.startWebImageOCR();
             },
           },
+          {
+            icon: "📚",
+            text: "Dịch Manga",
+            handler: () => {
+              dropdown.style.display = "none";
+              this.startMangaTranslation();
+            },
+          }
         );
       }
       if (settings.mediaOptions?.enabled) {
@@ -4680,17 +5848,13 @@
           input.type = "file";
           input.accept = ".html,.htm";
           input.style.display = "none";
-
           input.onchange = async (e) => {
             const file = e.target.files[0];
             if (!file) return;
-
             try {
               this.showTranslatingStatus();
               const content = await this.readFileContent(file);
               const translatedHTML = await this.page.translateHTML(content);
-
-              // Tạo và tải file đã dịch
               const blob = new Blob([translatedHTML], { type: "text/html" });
               const url = URL.createObjectURL(blob);
               const a = document.createElement("a");
@@ -4698,7 +5862,6 @@
               a.download = `translated_${file.name}`;
               a.click();
               URL.revokeObjectURL(url);
-
               this.showNotification("Dịch file HTML thành công", "success");
             } catch (error) {
               console.error("Lỗi dịch file HTML:", error);
@@ -4708,7 +5871,6 @@
               input.value = "";
             }
           };
-
           input.click();
         },
       });
@@ -4720,23 +5882,18 @@
           input.type = "file";
           input.accept = ".pdf";
           input.style.display = "none";
-
           input.onchange = async (e) => {
             const file = e.target.files[0];
             if (!file) return;
-
             try {
               this.showLoadingStatus("Đang xử lý PDF...");
               const translatedBlob = await this.page.translatePDF(file);
-
-              // Tải file đã dịch
               const url = URL.createObjectURL(translatedBlob);
               const a = document.createElement("a");
               a.href = url;
               a.download = `translated_${file.name.replace(".pdf", ".html")}`;
               a.click();
               URL.revokeObjectURL(url);
-
               this.showNotification("Dịch PDF thành công", "success");
             } catch (error) {
               console.error("Lỗi dịch PDF:", error);
@@ -4746,7 +5903,6 @@
               input.value = "";
             }
           };
-
           input.click();
         },
       });
@@ -4784,7 +5940,7 @@
     position: fixed;
     bottom: 20px;
     right: 20px;
-    z-index: 2147483646;
+    z-index: 2147483646 !important;
     font-family: Arial, sans-serif;
   }
   .translator-tools-button {
@@ -4847,7 +6003,7 @@
     width: 100%;
     height: 100%;
     background: rgba(0,0,0,0.3);
-    z-index: 2147483645;
+    z-index: 2147483645 !important;
     cursor: crosshair;
   }
   .translator-guide {
@@ -4860,7 +6016,7 @@
     padding: 10px 20px;
     border-radius: 5px;
     font-size: 14px;
-    z-index: 2147483646;
+    z-index: 2147483646 !important;
   }
   .translator-cancel {
     position: fixed;
@@ -4877,7 +6033,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 2147483646;
+    z-index: 2147483646 !important;
     transition: all 0.3s ease;
   }
   .translator-cancel:hover {
@@ -4894,7 +6050,7 @@
     padding: 8px 16px;
     border-radius: 4px;
     font-size: 14px;
-    z-index: 2147483646;
+    z-index: 2147483646 !important;
   }
   /* Dark mode support */
   @media (prefers-color-scheme: dark) {
@@ -4953,6 +6109,10 @@
     font-size: 14px;
   }
 `);
+      if (!document.body.contains(container)) {
+        document.body.appendChild(container);
+      }
+      container.style.zIndex = "2147483646 !important";
     }
     showProcessingStatus(message) {
       this.removeProcessingStatus();
@@ -4972,27 +6132,25 @@
         color: "white",
         padding: "20px",
         borderRadius: "10px",
-        zIndex: "2147483647",
+        zIndex: "2147483647 !important",
         textAlign: "center",
         minWidth: "200px",
       });
       document.body.appendChild(status);
       this.processingStatus = status;
     }
-
     updateProcessingStatus(message, progress) {
       if (this.processingStatus) {
         const messageEl = this.processingStatus.querySelector(
-          ".processing-message",
+          ".processing-message"
         );
         const progressEl = this.processingStatus.querySelector(
-          ".processing-progress",
+          ".processing-progress"
         );
         if (messageEl) messageEl.textContent = message;
         if (progressEl) progressEl.textContent = `${progress}%`;
       }
     }
-
     removeProcessingStatus() {
       if (this.processingStatus) {
         this.processingStatus.remove();
@@ -5003,13 +6161,11 @@
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = (e) => resolve(e.target.result);
-        reader.onerror = (e) => reject(new Error("Không thể đọc file"));
+        reader.onerror = () => reject(new Error("Không thể đọc file"));
         reader.readAsText(file);
       });
     }
-
     showLoadingStatus(message) {
-      // Tạo loading indicator
       const loading = document.createElement("div");
       loading.id = "pdf-loading-status";
       loading.style.cssText = `
@@ -5021,7 +6177,7 @@
             color: white;
             padding: 20px;
             border-radius: 10px;
-            z-index: 9999;
+            z-index: 2147483644 !important;
         `;
       loading.innerHTML = `
             <div style="text-align: center;">
@@ -5031,12 +6187,10 @@
         `;
       document.body.appendChild(loading);
     }
-
     removeLoadingStatus() {
       const loading = document.getElementById("pdf-loading-status");
       if (loading) loading.remove();
     }
-
     updateProgress(message, percent) {
       const loading = document.getElementById("pdf-loading-status");
       if (loading) {
@@ -5049,92 +6203,6 @@
             `;
       }
     }
-    getTranslatableNodes(element) {
-      const excludeSelectors = [
-        "script",
-        "style",
-        "noscript",
-        "iframe",
-        ".translator-tools-container",
-        ".translator-notification",
-        ".center-translate-status",
-        ".page-translate-button",
-      ];
-      const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, {
-        acceptNode: function(node) {
-          if (
-            excludeSelectors.some((selector) =>
-              node.parentElement?.matches?.(selector),
-            )
-          ) {
-            return NodeFilter.FILTER_REJECT;
-          }
-          return node.textContent.trim()
-            ? NodeFilter.FILTER_ACCEPT
-            : NodeFilter.FILTER_REJECT;
-        },
-      });
-      const nodes = [];
-      let node;
-      while ((node = walker.nextNode())) {
-        nodes.push(node);
-      }
-      return nodes;
-    }
-    groupTextNodes(nodes, maxChunkSize = 1000) {
-      const chunks = [];
-      let currentChunk = { nodes: [], size: 0 };
-      for (let node of nodes) {
-        const textLength = node.textContent.length;
-        if (currentChunk.size + textLength > maxChunkSize) {
-          if (currentChunk.nodes.length > 0) {
-            chunks.push(currentChunk);
-          }
-          currentChunk = { nodes: [node], size: textLength };
-        } else {
-          currentChunk.nodes.push(node);
-          currentChunk.size += textLength;
-        }
-      }
-      if (currentChunk.nodes.length > 0) {
-        chunks.push(currentChunk);
-      }
-      return chunks;
-    }
-    handleImageHover = (e) => {
-      if (e.target.tagName === "IMG") {
-        e.target.style.outline = "3px solid #4a90e2";
-      }
-    };
-    handleImageLeave = (e) => {
-      if (e.target.tagName === "IMG") {
-        e.target.style.outline = "";
-      }
-    };
-    handleImageClick = async (e) => {
-      if (e.target.tagName === "IMG") {
-        try {
-          this.showTranslatingStatus();
-          const img = e.target;
-          const canvas = document.createElement("canvas");
-          canvas.width = img.naturalWidth;
-          canvas.height = img.naturalHeight;
-          const ctx = canvas.getContext("2d");
-          ctx.drawImage(img, 0, 0);
-          const blob = await new Promise((resolve) => {
-            canvas.toBlob(resolve, "image/png");
-          });
-          const file = new File([blob], "web-image.png", { type: "image/png" });
-          const result = await this.ocr.processImage(file);
-          this.displayPopup(result, null, "OCR Web Image");
-          this.removeToolsListeners();
-        } catch (error) {
-          this.showNotification(error.message);
-        } finally {
-          this.removeTranslatingStatus();
-        }
-      }
-    };
     startWebImageOCR() {
       console.log("Starting web image OCR");
       const style = document.createElement("style");
@@ -5224,13 +6292,31 @@
             const ctx = canvas.getContext("2d");
             ctx.drawImage(e.target, 0, 0);
             const blob = await new Promise((resolve) =>
-              canvas.toBlob(resolve, "image/png"),
+              canvas.toBlob(resolve, "image/png")
             );
             const file = new File([blob], "web-image.png", {
               type: "image/png",
             });
+            const showSource = this.translator.userSettings.settings.displayOptions.languageLearning.showSource;
             const result = await this.ocr.processImage(file);
-            this.displayPopup(result, null, "OCR Web Image");
+            const translations = result.split("\n");
+            let fullTranslation = "";
+            let pinyin = "";
+            let text = "";
+            for (const trans of translations) {
+              const parts = trans.split("<|>");
+              if (showSource) {
+                text += (parts[0]?.trim() || "") + "\n";
+              }
+              pinyin += (parts[1]?.trim() || "") + "\n";
+              fullTranslation += (parts[2]?.trim() || trans) + "\n";
+            }
+            this.displayPopup(
+              fullTranslation.trim(),
+              text.trim(),
+              "OCR Web Image",
+              pinyin.trim()
+            );
             this.removeWebImageListeners();
           } catch (error) {
             console.error("OCR error:", error);
@@ -5256,196 +6342,322 @@
         style,
       };
     }
-    startWebMediaTranslation() {
-      console.log("Starting web media translation");
+    startMangaTranslation() {
       const style = document.createElement("style");
       style.textContent = `
     .translator-overlay {
-      position: fixed !important;
-      top: 0 !important;
-      left: 0 !important;
-      width: 100% !important;
-      height: 100% !important;
-      background: rgba(0,0,0,0.3) !important;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.3);
       z-index: 2147483646 !important;
-      pointer-events: none !important;
+      pointer-events: none;
+      transition: background 0.3s ease;
+    }
+    .translator-overlay.translating-done {
+      background: transparent;
     }
     .translator-guide {
-      position: fixed !important;
-      top: 20px !important;
-      left: 50% !important;
-      transform: translateX(-50%) !important;
-      background: rgba(0,0,0,0.8) !important;
-      color: white !important;
-      padding: 10px 20px !important;
-      border-radius: 5px !important;
-      font-size: 14px !important;
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.8);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 5px;
+      font-size: 14px;
       z-index: 2147483647 !important;
-      pointer-events: none !important;
     }
     .translator-cancel {
-      position: fixed !important;
-      top: 20px !important;
-      right: 20px !important;
-      background: #ff4444 !important;
-      color: white !important;
-      border: none !important;
-      border-radius: 50% !important;
-      width: 30px !important;
-      height: 30px !important;
-      font-size: 16px !important;
-      cursor: pointer !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #ff4444;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      font-size: 16px;
+      cursor: pointer;
       z-index: 2147483647 !important;
-      pointer-events: auto !important;
     }
-    audio, video {
-      pointer-events: auto !important;
-    }
-    .translator-media-highlight {
-      outline: 3px solid #4a90e2 !important;
-      cursor: pointer !important;
-      position: relative !important;
+    .manga-translation-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      pointer-events: none;
       z-index: 2147483646 !important;
+    }
+    .manga-translation-overlay {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 4px 8px;
+      border-radius: 4px;
+      pointer-events: none;
+      text-align: center;
+      word-break: break-word;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+      border: 2px solid rgba(74, 144, 226, 0.7);
+    }
+    img.translator-image-highlight {
+      outline: 3px solid #4a90e2;
+      cursor: pointer;
     }
   `;
       document.head.appendChild(style);
+      const overlayContainer = document.createElement("div");
+      overlayContainer.className = "manga-translation-container";
+      document.body.appendChild(overlayContainer);
       const overlay = document.createElement("div");
       overlay.className = "translator-overlay";
       const guide = document.createElement("div");
       guide.className = "translator-guide";
-      guide.textContent = "Click vào audio/video để dịch";
+      guide.textContent = "Click vào ảnh để dịch";
       const cancelBtn = document.createElement("button");
       cancelBtn.className = "translator-cancel";
       cancelBtn.textContent = "✕";
       document.body.appendChild(overlay);
       document.body.appendChild(guide);
       document.body.appendChild(cancelBtn);
+      let existingOverlays = [];
       const handleHover = (e) => {
-        const mediaElement = findMediaElement(e.target);
-        if (mediaElement) {
-          mediaElement.classList.add("translator-media-highlight");
+        if (e.target.tagName === "IMG") {
+          e.target.classList.add("translator-image-highlight");
         }
       };
       const handleLeave = (e) => {
-        const mediaElement = findMediaElement(e.target);
-        if (mediaElement) {
-          mediaElement.classList.remove("translator-media-highlight");
+        if (e.target.tagName === "IMG") {
+          e.target.classList.remove("translator-image-highlight");
         }
       };
       const handleClick = async (e) => {
-        const mediaElement = findMediaElement(e.target);
-        if (mediaElement) {
+        if (e.target.tagName === "IMG") {
           e.preventDefault();
           e.stopPropagation();
-          if (!mediaElement.paused) {
-            mediaElement.pause();
-          }
-          showMediaContextMenu(e, mediaElement);
-        }
-      };
-      const findMediaElement = (target) => {
-        if (target.tagName === "AUDIO" || target.tagName === "VIDEO") {
-          return target;
-        }
-        const containers = [
-          ".audio-player",
-          ".video-player",
-          ".mejs-container",
-          ".jp-audio",
-          ".jp-video",
-          ".plyr",
-          ".video-js",
-          ".jwplayer",
-          '[class*="player"]',
-          '[class*="audio"]',
-          '[class*="video"]',
-        ];
-        for (const selector of containers) {
-          const container = target.closest(selector);
-          if (container) {
-            const media = container.querySelector("audio, video");
-            if (media) return media;
-          }
-        }
-        const controlSelectors = [
-          "button",
-          '[class*="play"]',
-          '[class*="pause"]',
-          '[class*="control"]',
-          '[role="button"]',
-        ];
-        for (const selector of controlSelectors) {
-          if (target.matches(selector)) {
-            const container = target.closest(
-              '[class*="player"],[class*="audio"],[class*="video"]',
-            );
-            if (container) {
-              const media = container.querySelector("audio, video");
-              if (media) return media;
-            }
-          }
-        }
-        return null;
-      };
-      const showMediaContextMenu = (e, mediaElement) => {
-        const contextMenu = document.createElement("div");
-        Object.assign(contextMenu.style, {
-          position: "fixed",
-          left: `${e.clientX}px`,
-          top: `${e.clientY}px`,
-          background: "white",
-          border: "1px solid #ccc",
-          borderRadius: "5px",
-          padding: "5px",
-          boxShadow: "0 2px 5px rgba(0,0,0,0.2)",
-          zIndex: "2147483647",
-        });
-        const options = [
-          {
-            text: "Dịch file",
-            handler: async () => {
+          try {
+            this.showTranslatingStatus();
+            const image = e.target;
+            const imageUrl = new URL(image.src);
+            const referer = window.location.href;
+            const canvas = document.createElement("canvas");
+            const ctx = canvas.getContext("2d");
+            const loadImage = async (url) => {
+              return new Promise((resolve, reject) => {
+                GM_xmlhttpRequest({
+                  method: "GET",
+                  url: url,
+                  headers: {
+                    Accept: "image/webp,image/apng,image/*,*/*;q=0.8",
+                    "Accept-Encoding": "gzip, deflate, br",
+                    "Accept-Language": "en-US,en;q=0.9",
+                    "Cache-Control": "no-cache",
+                    Pragma: "no-cache",
+                    Referer: referer,
+                    Origin: imageUrl.origin,
+                    "Sec-Fetch-Dest": "image",
+                    "Sec-Fetch-Mode": "no-cors",
+                    "Sec-Fetch-Site": "cross-site",
+                    "User-Agent": navigator.userAgent,
+                  },
+                  responseType: "blob",
+                  anonymous: true,
+                  onload: function(response) {
+                    if (response.status === 200) {
+                      const blob = response.response;
+                      const img = new Image();
+                      img.onload = () => {
+                        canvas.width = img.naturalWidth;
+                        canvas.height = img.naturalHeight;
+                        ctx.drawImage(img, 0, 0);
+                        resolve();
+                      };
+                      img.onerror = () =>
+                        reject(new Error("Không thể load ảnh"));
+                      img.src = URL.createObjectURL(blob);
+                    } else {
+                      const img = new Image();
+                      img.crossOrigin = "anonymous";
+                      img.onload = () => {
+                        canvas.width = img.naturalWidth;
+                        canvas.height = img.naturalHeight;
+                        ctx.drawImage(img, 0, 0);
+                        resolve();
+                      };
+                      img.onerror = () =>
+                        reject(new Error("Không thể load ảnh"));
+                      img.src = url;
+                    }
+                  },
+                  onerror: function() {
+                    const img = new Image();
+                    img.crossOrigin = "anonymous";
+                    img.onload = () => {
+                      canvas.width = img.naturalWidth;
+                      canvas.height = img.naturalHeight;
+                      ctx.drawImage(img, 0, 0);
+                      resolve();
+                    };
+                    img.onerror = () => reject(new Error("Không thể load ảnh"));
+                    img.src = url;
+                  },
+                });
+              });
+            };
+            await loadImage(image.src);
+            const blob = await new Promise((resolve, reject) => {
               try {
-                contextMenu.remove();
-                await this.handleMediaFile(mediaElement);
-              } catch (error) {
-                this.showNotification(error.message, "error");
+                canvas.toBlob((b) => {
+                  if (b) resolve(b);
+                  else reject(new Error("Không thể tạo blob"));
+                }, "image/png");
+              } catch (err) {
+                reject(new Error("Lỗi khi tạo blob"));
               }
-            },
-          },
-        ];
-        options.forEach((option) => {
-          const div = document.createElement("div");
-          Object.assign(div.style, {
-            padding: "8px 15px",
-            cursor: "pointer",
-            borderRadius: "3px",
-            whiteSpace: "nowrap",
-          });
-          div.onmouseover = () => (div.style.backgroundColor = "#f5f5f5");
-          div.onmouseout = () => (div.style.backgroundColor = "transparent");
-          div.onclick = option.handler;
-          div.textContent = option.text;
-          contextMenu.appendChild(div);
-        });
-        document.body.appendChild(contextMenu);
-        const closeMenu = (e) => {
-          if (!contextMenu.contains(e.target)) {
-            contextMenu.remove();
-            document.removeEventListener("click", closeMenu);
+            });
+            const file = new File([blob], "manga.png", { type: "image/png" });
+            const result = await this.detectTextPositions(file);
+            overlayContainer.innerHTML = "";
+            existingOverlays = [];
+            if (result?.regions) {
+              overlayContainer.innerHTML = "";
+              existingOverlays = [];
+              overlay.classList.add("translating-done");
+              const sortedRegions = result.regions.sort((a, b) => {
+                if (Math.abs(a.position.y - b.position.y) < 20) {
+                  return b.position.x - a.position.x;
+                }
+                return a.position.y - b.position.y;
+              });
+              sortedRegions.forEach((region) => {
+                const overlay = document.createElement("div");
+                overlay.className = "manga-translation-overlay";
+                const calculatePosition = () => {
+                  const imageRect = image.getBoundingClientRect();
+                  const x =
+                    (imageRect.width * region.position.x) / 100 +
+                    imageRect.left;
+                  const y =
+                    (imageRect.height * region.position.y) / 100 +
+                    imageRect.top;
+                  const width = (imageRect.width * region.position.width) / 100;
+                  const height =
+                    (imageRect.height * region.position.height) / 100;
+                  return { x, y, width, height };
+                };
+                const pos = calculatePosition();
+                const padding = 2;
+                const mode =
+                  this.translator.userSettings.settings.theme ||
+                  CONFIG.THEME.mode;
+                Object.assign(overlay.style, {
+                  position: "fixed",
+                  left: `${pos.x}px`,
+                  top: `${pos.y}px`,
+                  minWidth: `${pos.width - padding * 2}px`,
+                  width: "auto",
+                  maxWidth: `${pos.width * 1.4 - padding * 2}px`,
+                  height: "auto",
+                  // maxHeight: `${pos.height * 2}px`,
+                  background: `${CONFIG.THEME[mode].background}`,
+                  color: `${CONFIG.THEME[mode].text}`,
+                  padding: `${padding * 2}px ${padding * 4}px`,
+                  borderRadius: "2px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  textAlign: "center",
+                  wordBreak: "keep-all",
+                  wordWrap: "break-word",
+                  // overflowWrap: "normal",
+                  lineHeight: "1.2",
+                  pointerEvents: "none",
+                  zIndex: "2147483646 !important",
+                  fontSize:
+                    this.translator.userSettings.settings.displayOptions
+                      .webImageTranslation.fontSize || "9px",
+                  fontWeight: "600",
+                  margin: "0",
+                  flexWrap: "wrap",
+                  whiteSpace: "pre-wrap",
+                  overflow: "visible",
+                  boxSizing: "border-box",
+                  transform: "none",
+                  transformOrigin: "center center",
+                });
+                overlay.textContent = region.translation;
+                overlayContainer.appendChild(overlay);
+                const updatePosition = debounce(() => {
+                  const newPos = calculatePosition();
+                  overlay.style.left = `${newPos.x}px`;
+                  overlay.style.top = `${newPos.y}px`;
+                  overlay.style.minWidth = `${newPos.width - padding * 2}px`;
+                  overlay.style.maxWidth = `${newPos.width * 1.4 - padding * 2
+                    }px`;
+                  // overlay.style.maxHeight = `${newPos.height * 2}px`;
+                }, 16);
+                window.addEventListener("scroll", updatePosition, {
+                  passive: true,
+                });
+                window.addEventListener("resize", updatePosition, {
+                  passive: true,
+                });
+              });
+              overlayContainer.style.cssText = `
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2147483646 !important;
+`;
+              document.head.appendChild(style);
+            }
+          } catch (error) {
+            console.error("Translation error:", error);
+            this.showNotification(error.message, "error");
+          } finally {
+            this.removeTranslatingStatus();
           }
-        };
-        setTimeout(() => document.addEventListener("click", closeMenu), 0);
+        }
       };
       document.addEventListener("mouseover", handleHover, true);
       document.addEventListener("mouseout", handleLeave, true);
       document.addEventListener("click", handleClick, true);
       cancelBtn.addEventListener("click", () => {
-        this.removeWebMediaListeners();
+        if (this.updatePosition) {
+          window.removeEventListener("scroll", this.updatePosition);
+          window.removeEventListener("resize", this.updatePosition);
+          this.updatePosition = null;
+        }
+        overlayContainer.innerHTML = "";
+        overlayContainer.remove();
+        document.removeEventListener("mouseover", handleHover, true);
+        document.removeEventListener("mouseout", handleLeave, true);
+        document.removeEventListener("click", handleClick, true);
+        overlay.remove();
+        guide.remove();
+        cancelBtn.remove();
+        style.remove();
+        document
+          .querySelectorAll(".translator-image-highlight")
+          .forEach((el) => {
+            el.classList.remove("translator-image-highlight");
+          });
+        document
+          .querySelectorAll(".manga-translation-overlay")
+          .forEach((el) => el.remove());
+        overlay.classList.remove("translating-done");
+        this.removeWebImageListeners();
       });
-      this.webMediaListeners = {
+      this.webImageListeners = {
         hover: handleHover,
         leave: handleLeave,
         click: handleClick,
@@ -5453,62 +6665,123 @@
         guide,
         cancelBtn,
         style,
+        container: overlayContainer,
       };
     }
-    async handleAudioFile(mediaElement) {
+    async detectTextPositions(file) {
       try {
-        const blob = await fetch(mediaElement.src).then((r) => r.blob());
-        const base64Audio = await this.blobToBase64(blob);
-        const mediaSettings =
-          this.translator.userSettings.settings.mediaOptions;
+        const base64Image = await this.ocr.fileToBase64(file);
+        const settings = this.translator.userSettings.settings;
+        const selectedModel = this.translator.api.getGeminiModel();
+        const targetLanguage = settings.displayOptions.targetLanguage;
         const requestBody = {
           contents: [
             {
               parts: [
                 {
-                  audio: {
-                    data: base64Audio,
+                  text: `Analyze this image and extract all text regions. For each text region:
+1. Extract the original text
+2. Dịch sang ngôn ngữ có mã ngôn ngữ là '${targetLanguage}' với yêu cầu sau:
+  Bạn là một người dịch truyện chuyên nghiệp, chuyên tạo bản dịch chính xác và tự nhiên. Bạn cần dịch một đoạn truyện sang ngôn ngữ có mã ngôn ngữ là '${targetLanguage}'. Hãy đảm bảo rằng bản dịch của bạn giữ nguyên ý nghĩa của câu gốc và phù hợp với văn phong của ngôn ngữ đích. Khi dịch, hãy chú ý đến ngữ cảnh văn hóa và bối cảnh của câu chuyện để người đọc có thể hiểu chính xác nội dung. Các quy tắc quan trọng bạn cần tuân thủ bao gồm:
+    - Đảm bảo nghĩa của các câu không bị thay đổi khi dịch.
+    - Sử dụng các từ lóng hoặc cụm từ thông dụng khi cần thiết để bản dịch gần gũi với người đọc.
+    - Kiểm tra chính tả và ngữ pháp trong bản dịch.
+    - Thêm các trợ từ ngôn ngữ có mã ngôn ngữ là '${targetLanguage}' khi cần để câu văn hoàn chỉnh hơn.
+    - Sử dụng đại từ nhân xưng ngôn ngữ có mã ngôn ngữ là '${targetLanguage}' tự nhiên và hợp ngữ cảnh.
+    - Tham khảo các trang web sau để lấy văn phong phù hợp cho các đoạn truyện liên quan đến sex: [https://truyensex.moe/, https://truyensexvn.org/, https://truyensex.vip/, https://truyensextv69.com/].
+  Lưu ý:
+    - Những từ tên riêng, địa điểm thì hãy dịch theo nghĩa Hán Việt ví dụ như: Diệp Trần, Lục Thiếu Du, Long kiếm, Long Sĩ Đầu, Thiên kiếp, ngõ Nê Bình, ... thì giữ theo nghĩa Hán Việt sẽ hay hơn là dịch hẳn sang ngôn ngữ có mã ngôn ngữ là '${targetLanguage}'.
+    - Chỉ trả về bản dịch ngôn ngữ có mã ngôn ngữ là '${targetLanguage}', không giải thích thêm.
+3. Determine PRECISE position and size:
+   - x, y: exact percentage position relative to image (0-100)
+   - width, height: exact percentage size relative to image (0-100)
+   - text_length: character count of original text
+   - text_lines: number of text lines
+   - bubble_type: speech/thought/narration/sfx
+Return ONLY a JSON object like:
+{
+  "regions": [{
+    "text": "original text",
+    "translation": "translated text",
+    "position": {
+      "x": 20.5,
+      "y": 30.2,
+      "width": 15.3,
+      "height": 10.1,
+      "text_length": 25,
+      "text_lines": 2,
+      "bubble_type": "speech"
+    }
+  }]
+}`,
+                },
+                {
+                  inline_data: {
+                    mime_type: file.type,
+                    data: base64Image,
                   },
                 },
               ],
             },
           ],
           generationConfig: {
-            temperature: mediaSettings.temperature,
-            topP: mediaSettings.topP,
-            topK: mediaSettings.topK,
-            maxOutputTokens: 2048,
+            temperature: settings.ocrOptions.temperature,
+            topP: settings.ocrOptions.topP,
+            topK: settings.ocrOptions.topK,
           },
         };
-        const response = await this.translator.api.request(
-          requestBody,
-          "gemini-2.0-flash-lite",
-        );
-        if (response) {
-          this.displayTranslation(response);
+        console.log("Sending API request...");
+        const responses =
+          await this.translator.api.keyManager.executeWithMultipleKeys(
+            async (key) => {
+              const response = await new Promise((resolve, reject) => {
+                GM_xmlhttpRequest({
+                  method: "POST",
+                  url: `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${key}`,
+                  headers: { "Content-Type": "application/json" },
+                  data: JSON.stringify(requestBody),
+                  onload: (response) => {
+                    console.log("API Response:", response);
+                    if (response.status === 200) {
+                      try {
+                        const result = JSON.parse(response.responseText);
+                        const text =
+                          result?.candidates?.[0]?.content?.parts?.[0]?.text;
+                        if (text) {
+                          const jsonMatch = text.match(/\{[\s\S]*\}/);
+                          if (jsonMatch) {
+                            const parsedJson = JSON.parse(jsonMatch[0]);
+                            resolve(parsedJson);
+                          } else {
+                            reject(new Error("No JSON found in response"));
+                          }
+                        } else {
+                          reject(new Error("Invalid response format"));
+                        }
+                      } catch (error) {
+                        console.error("Parse error:", error);
+                        reject(error);
+                      }
+                    } else {
+                      reject(new Error(`API Error: ${response.status}`));
+                    }
+                  },
+                  onerror: (error) => reject(error),
+                });
+              });
+              return response;
+            },
+            settings.apiProvider
+          );
+        console.log("API responses:", responses);
+        const response = responses.find((r) => r && r.regions);
+        if (!response) {
+          throw new Error("No valid response found");
         }
+        return response;
       } catch (error) {
-        console.error("Error processing audio file:", error);
-        this.showNotification("Lỗi khi xử lý file audio: " + error.message);
-      }
-    }
-    async blobToBase64(blob) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const base64String = reader.result.split(",")[1];
-          resolve(base64String);
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
-    }
-    async handleMediaFile(mediaElement) {
-      try {
-        await this.handleAudioFile(mediaElement);
-      } catch (error) {
-        console.error("Media handling error:", error);
-        this.showNotification(error.message, "error");
+        console.error("Text detection error:", error);
+        throw error;
       }
     }
     getBrowserContextMenuSize() {
@@ -5559,7 +6832,7 @@
         const selectedText = selection.toString().trim();
         if (selectedText) {
           const oldMenus = document.querySelectorAll(
-            ".translator-context-menu",
+            ".translator-context-menu"
           );
           oldMenus.forEach((menu) => menu.remove());
           const contextMenu = document.createElement("div");
@@ -5595,7 +6868,6 @@
           const spaceWidth = browserMenuWidth + menuWidth;
           const spaceHeight = browserMenuHeight + menuHeight;
           const remainingWidth = viewportWidth - e.clientX;
-          const remainingHeight = viewportHeight - e.clientY;
           const rightEdge = viewportWidth - menuWidth;
           const bottomEdge = viewportHeight - menuHeight;
           const browserMenuWidthEdge = viewportWidth - browserMenuWidth;
@@ -5654,16 +6926,18 @@
           window.addEventListener("scroll", handleScroll);
         }
       });
+      const mode =
+        this.translator.userSettings.settings.theme || CONFIG.THEME.mode;
       GM_addStyle(`
         .translator-context-menu {
           position: fixed;
-          background: ${CONFIG.THEME[CONFIG.THEME.mode].background};
-          border: 1px solid ${CONFIG.THEME[CONFIG.THEME.mode].border};
+          background: ${CONFIG.THEME[mode].background};
+          border: 1px solid ${CONFIG.THEME[mode].border};
           border-radius: 8px;
           padding: 5px 0;
           min-width: 150px;
           box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-          z-index: 9999;
+          z-index: 2147483647 !important;
           font-family: Arial, sans-serif;
           font-size: 14px;
           opacity: 0;
@@ -5684,7 +6958,7 @@
         .translator-context-menu-item {
           padding: 8px 15px;
           cursor: pointer;
-          color: ${CONFIG.THEME[CONFIG.THEME.mode].text};
+          color: ${CONFIG.THEME[mode].text};
           transition: all 0.2s ease;
           display: flex;
           align-items: center;
@@ -5692,60 +6966,30 @@
           white-space: nowrap;
         }
         .translator-context-menu-item:hover {
-          background: ${CONFIG.THEME[CONFIG.THEME.mode].button.translate.background
-        };
-          color: ${CONFIG.THEME[CONFIG.THEME.mode].button.translate.text};
+          background: ${CONFIG.THEME[mode].button.translate.background};
+          color: ${CONFIG.THEME[mode].button.translate.text};
         }
         .translator-context-menu-item:active {
           transform: scale(0.98);
         }
       `);
     }
-    removeWebMediaListeners() {
-      if (this.webMediaListeners) {
-        document.removeEventListener(
-          "mouseover",
-          this.webMediaListeners.hover,
-          true,
-        );
-        document.removeEventListener(
-          "mouseout",
-          this.webMediaListeners.leave,
-          true,
-        );
-        document.removeEventListener(
-          "click",
-          this.webMediaListeners.click,
-          true,
-        );
-        this.webMediaListeners.overlay?.remove();
-        this.webMediaListeners.guide?.remove();
-        this.webMediaListeners.cancelBtn?.remove();
-        this.webMediaListeners.style?.remove();
-        document
-          .querySelectorAll(".translator-media-highlight")
-          .forEach((el) => {
-            el.classList.remove("translator-media-highlight");
-          });
-        this.webMediaListeners = null;
-      }
-    }
     removeWebImageListeners() {
       if (this.webImageListeners) {
         document.removeEventListener(
           "mouseover",
           this.webImageListeners.hover,
-          true,
+          true
         );
         document.removeEventListener(
           "mouseout",
           this.webImageListeners.leave,
-          true,
+          true
         );
         document.removeEventListener(
           "click",
           this.webImageListeners.click,
-          true,
+          true
         );
         this.webImageListeners.overlay?.remove();
         this.webImageListeners.guide?.remove();
@@ -5810,7 +7054,7 @@
       } else {
         document.removeEventListener(
           "keydown",
-          this.translationShortcutListener,
+          this.translationShortcutListener
         );
       }
     }
@@ -5819,13 +7063,13 @@
         document.addEventListener("mouseup", this.mouseupButtonListener);
         document.addEventListener(
           "selectionchange",
-          this.selectionButtonListener,
+          this.selectionButtonListener
         );
       } else {
         document.removeEventListener("mouseup", this.mouseupButtonListener);
         document.removeEventListener(
           "selectionchange",
-          this.selectionButtonListener,
+          this.selectionButtonListener
         );
       }
     }
@@ -5833,10 +7077,6 @@
       if (enabled) this.setupDocumentTapHandler();
     }
     setupEventListeners() {
-      const pageTranslation =
-        this.translator.userSettings.settings.pageTranslation;
-      const ocrOptions = this.translator.userSettings.settings.ocrOptions;
-      const mediaOptions = this.translator.userSettings.settings.mediaOptions;
       const shortcuts = this.translator.userSettings.settings.shortcuts;
       const clickOptions = this.translator.userSettings.settings.clickOptions;
       const touchOptions = this.translator.userSettings.settings.touchOptions;
@@ -5857,19 +7097,17 @@
         this.updateTapListeners(true);
         this.translationTapEnabled = true;
       }
-      if (
-        pageTranslation?.enabled ||
-        ocrOptions?.enabled ||
-        mediaOptions?.enabled
-      ) {
-        const isEnabled =
-          localStorage.getItem("translatorToolsEnabled") === "true";
-        if (isEnabled) {
-          this.setupTranslatorTools();
-        }
+      const isEnabled =
+        localStorage.getItem("translatorToolsEnabled") === "true";
+      if (isEnabled) {
+        this.setupTranslatorTools();
       }
       document.addEventListener("settingsChanged", (e) => {
+        this.removeToolsContainer();
         const newSettings = e.detail;
+        if (newSettings.theme !== this.translator.userSettings.settings.theme) {
+          this.updateAllButtonStyles();
+        }
         this.updateSettingsListener(newSettings.shortcuts?.settingsEnabled);
         this.updateSettingsTranslationListeners(newSettings.shortcuts?.enabled);
         if (newSettings.clickOptions?.enabled !== undefined) {
@@ -5888,7 +7126,7 @@
         }
         this.cache = new TranslationCache(
           newSettings.cacheOptions.text.maxSize,
-          newSettings.cacheOptions.text.expirationTime,
+          newSettings.cacheOptions.text.expirationTime
         );
         this.cache.clear();
         if (this.ocr?.imageCache) {
@@ -5901,21 +7139,15 @@
           maxRetries: CONFIG.API.maxRetries,
           retryDelay: CONFIG.API.retryDelay,
         };
-        this.api = new APIManager(apiConfig);
-        if (
-          pageTranslation?.enabled ||
-          ocrOptions?.enabled ||
-          mediaOptions?.enabled
-        ) {
-          const isEnabled =
-            localStorage.getItem("translatorToolsEnabled") === "true";
-          if (isEnabled) {
-            this.setupTranslatorTools();
-          }
+        this.api = new APIManager(
+          apiConfig,
+          () => this.translator.userSettings.settings
+        );
+        const isEnabled =
+          localStorage.getItem("translatorToolsEnabled") === "true";
+        if (isEnabled) {
+          this.setupTranslatorTools();
         }
-        this.removeToolsListeners();
-        this.removeToolsContainer();
-        this.setupTranslatorTools();
       });
     }
     showNotification(message, type = "info") {
@@ -5938,7 +7170,7 @@
         color: textColor,
         padding: "10px 20px",
         borderRadius: "5px",
-        zIndex: "2147483647",
+        zIndex: "2147483647 !important",
         animation: "fadeInOut 2s ease",
         fontFamily: "Arial, sans-serif",
         fontSize: "14px",
@@ -5974,7 +7206,7 @@
     }
     removeAllProcessingIndicators() {
       const indicators = document.querySelectorAll(
-        ".translator-processing-indicator",
+        ".translator-processing-indicator"
       );
       indicators.forEach((indicator) => {
         if (indicator && indicator.parentNode) {
@@ -5997,74 +7229,82 @@
       this.ui = new UIManager(this);
       this.cache = new TranslationCache(
         this.userSettings.settings.cacheOptions.text.maxSize,
-        this.userSettings.settings.cacheOptions.text.expirationTime,
+        this.userSettings.settings.cacheOptions.text.expirationTime
       );
       this.page = new PageTranslator(this);
+      if (this.userSettings.settings.inputTranslation?.enabled) {
+        this.inputTranslator = new InputTranslator(this);
+      }
       this.ui.setupEventListeners();
       this.cache.optimizeStorage();
       this.autoCorrectEnabled = true;
     }
-
     async translate(
       text,
       targetElement,
       isAdvanced = false,
-      displaySimple = false,
+      popup = false,
+      targetLang = ""
     ) {
-      if (!text) return null;
-
       try {
-        const prompt = this.createPrompt(text, isAdvanced);
+        if (!text) return null;
+        const settings = this.userSettings.settings.displayOptions;
+        const targetLanguage = targetLang || settings.targetLanguage;
+        const promptType = isAdvanced ? "advanced" : "normal";
+        const prompt = this.createPrompt(text, promptType, targetLanguage);
         let translatedText;
-
         const cacheEnabled =
           this.userSettings.settings.cacheOptions.text.enabled;
         if (cacheEnabled) {
-          translatedText = this.cache.get(text, isAdvanced);
+          translatedText = this.cache.get(text, isAdvanced, targetLanguage);
         }
-
         if (!translatedText) {
           translatedText = await this.api.request(prompt);
           if (cacheEnabled && translatedText) {
-            this.cache.set(text, translatedText, isAdvanced);
+            this.cache.set(text, translatedText, isAdvanced, targetLanguage);
           }
         }
-
-        // Nếu có targetElement và không phải là dịch PDF, hiển thị kết quả
         if (
           translatedText &&
           targetElement &&
           !targetElement.isPDFTranslation
         ) {
-          if (isAdvanced || displaySimple) {
-            this.ui.displayPopup(translatedText, text);
+          if (isAdvanced || popup) {
+            const translations = translatedText.split("\n");
+            let fullTranslation = "";
+            let pinyin = "";
+            for (const trans of translations) {
+              const parts = trans.split("<|>");
+              pinyin += (parts[1]?.trim() || "") + "\n";
+              fullTranslation += (parts[2]?.trim() || trans) + "\n";
+            }
+            this.ui.displayPopup(
+              fullTranslation.trim(),
+              text,
+              "King1x32 <3",
+              pinyin.trim()
+            );
           } else {
-            this.ui.showTranslationBelow(targetElement, translatedText);
+            this.ui.showTranslationBelow(translatedText, targetElement, text);
           }
         }
-
-        return translatedText; // Trả về kết quả dịch
+        return translatedText;
       } catch (error) {
-        console.error("Translation error:", error);
-        if (targetElement && !targetElement.isPDFTranslation) {
-          this.handleError(error, targetElement);
-        }
-        throw error;
+        console.error("Lỗi dịch:", error);
+        this.ui.showNotification(error.message, "error");
       }
     }
     async translateLongText(text, maxChunkSize = 1000) {
       const chunks = this.splitIntoChunks(text, maxChunkSize);
       const translations = await Promise.all(
-        chunks.map((chunk) => this.translate(chunk)),
+        chunks.map((chunk) => this.translate(chunk))
       );
       return this.smartMerge(translations);
     }
-
     splitIntoChunks(text, maxChunkSize) {
       const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
       const chunks = [];
       let currentChunk = "";
-
       for (const sentence of sentences) {
         if ((currentChunk + sentence).length > maxChunkSize && currentChunk) {
           chunks.push(currentChunk.trim());
@@ -6072,32 +7312,25 @@
         }
         currentChunk += sentence + " ";
       }
-
       if (currentChunk) {
         chunks.push(currentChunk.trim());
       }
-
       return chunks;
     }
-
     smartMerge(translations) {
       return translations.reduce((merged, current, index) => {
         if (index === 0) return current;
-
         const lastChar = merged.slice(-1);
-        const firstChar = current.charAt(0);
-
         if (".!?".includes(lastChar)) {
           return `${merged} ${current}`;
         }
-
         return merged + current;
       }, "");
     }
-
     async autoCorrect(translation) {
-      const prompt = `Please check and correct any grammar or context issues in this Vietnamese translation: "${translation}"`;
-
+      const targetLanguage =
+        this.userSettings.settings.displayOptions.targetLanguage;
+      const prompt = `Vui lòng kiểm tra và sửa chữa bất kỳ lỗi ngữ pháp hoặc vấn đề về ngữ cảnh trong bản dịch sang ngôn ngữ có mã ngôn ngữ là '${targetLanguage}' này: "${translation}". Không thêm hay bớt ý của bản gốc cũng như không thêm tiêu đề, không giải thích về các thay đổi đã thực hiện.`;
       try {
         const corrected = await this.api.request(prompt);
         return corrected.trim();
@@ -6106,16 +7339,113 @@
         return translation;
       }
     }
-    createPrompt(text, isAdvanced) {
-      return isAdvanced
-        ? `Dịch và phân tích từ khóa: "${text}"`
-        : `Cho bạn đoạn văn bản: "${text}".
-                   Hãy dịch đoạn văn bản đó thành Tiếng Việt (Vietnamese) với các điều kiện sau:
-                   - Tuân thủ chặt chẽ bối cảnh và sắc thái ban đầu.
-                   - Sự lưu loát tự nhiên như người bản xứ.
-                   - Không có thêm giải thích/diễn giải.
-                   - Bảo toàn thuật ngữ 1:1 cho các thuật ngữ/danh từ riêng.
-                   Chỉ in ra bản dịch mà không có dấu ngoặc kép.`;
+    createPrompt(text, type = "normal", targetLang = "") {
+      const settings = this.userSettings.settings;
+      const targetLanguage =
+        targetLang || settings.displayOptions.targetLanguage;
+      const sourceLanguage = settings.displayOptions.sourceLanguage;
+      const isPinyinMode =
+        settings.displayOptions.translationMode !== "translation_only"
+      if (
+        settings.promptSettings?.enabled &&
+        settings.promptSettings?.useCustom
+      ) {
+        const prompts = settings.promptSettings.customPrompts;
+        const promptKey = isPinyinMode ? `${type}_chinese` : type;
+        let promptTemplate = prompts[promptKey];
+        if (promptTemplate) {
+          return promptTemplate
+            .replace(/\{text\}/g, text)
+            .replace(/\{targetLang\}/g, targetLanguage)
+            .replace(
+              /\{sourceLang\}/g,
+              sourceLanguage || this.page.languageCode
+            );
+        }
+      }
+      return this.createDefaultPrompt(text, type, isPinyinMode, targetLanguage);
+    }
+    createDefaultPrompt(
+      text,
+      type = "normal",
+      isPinyinMode = false,
+      targetLang = ""
+    ) {
+      const settings = this.userSettings.settings;
+      const targetLanguage =
+        targetLang || settings.displayOptions.targetLanguage;
+      const share_media = `Bạn là một người dịch phụ đề phim chuyên nghiệp, chuyên tạo file SRT. Bạn cần dịch một đoạn hội thoại phim sang ngôn ngữ có mã ngôn ngữ là '${targetLanguage}'. Hãy đảm bảo rằng bản dịch của bạn chính xác và tự nhiên, giữ nguyên ý nghĩa của câu gốc. Khi dịch, hãy chú ý đến ngữ cảnh văn hóa và bối cảnh của bộ phim để người xem có thể hiểu chính xác nội dung. Các quy tắc quan trọng bạn cần tuân thủ bao gồm:
+      - Đảm bảo nghĩa của các câu không bị thay đổi khi dịch.
+      - Sử dụng các từ lóng hoặc cụm từ thông dụng khi cần thiết để bản dịch gần gũi với người đọc.
+      - Kiểm tra chính tả và ngữ pháp trong bản dịch.
+      - Thêm các trợ từ ngôn ngữ có mã ngôn ngữ là '${targetLanguage}' khi cần để hội thoại hoàn chỉnh hơn.
+      - Sử dụng đại từ nhân xưng ngôn ngữ có mã ngôn ngữ là '${targetLanguage}' tự nhiên và hợp ngữ cảnh.
+      - Tham khảo các trang web sau để lấy văn phong phù hợp cho các đoạn hội thoại liên quan đến sex: [https://truyensex.moe/, https://truyensexvn.org/, https://truyensex.vip/, https://truyensextv69.com/].
+  Lưu ý:
+    - Những từ tên riêng, địa điểm thì hãy dịch theo nghĩa Hán Việt ví dụ như: Diệp Trần, Lục Thiếu Du, Long kiếm, Long Sĩ Đầu, Thiên kiếp, ngõ Nê Bình, ... thì giữ theo nghĩa Hán Việt sẽ hay hơn là dịch hẳn sang ngôn ngữ có mã ngôn ngữ là '${targetLanguage}'.`;
+      const base_normal = `Cho bạn đoạn văn bản: '${text}'.
+    Hãy dịch đoạn văn bản trên sang ngôn ngữ có mã ngôn ngữ là '${targetLanguage}' với các yêu cầu sau:
+      - Dịch phải tuân thủ chặt chẽ bối cảnh và sắc thái ban đầu của văn bản.
+      - Đảm bảo sự lưu loát và tự nhiên như người bản xứ.
+      - Không thêm bất kỳ giải thích hay diễn giải nào ngoài bản dịch.
+      - Bảo toàn các thuật ngữ và danh từ riêng với tỷ lệ 1:1.
+    Nếu bạn nhận thấy văn bản là truyện thì hãy dịch truyện theo yêu cầu sau:
+      Bạn là một người dịch truyện chuyên nghiệp, chuyên tạo bản dịch chính xác và tự nhiên. Bạn cần dịch một đoạn truyện sang ngôn ngữ có mã ngôn ngữ là '${targetLanguage}'. Hãy đảm bảo rằng bản dịch của bạn giữ nguyên ý nghĩa của câu gốc và phù hợp với văn phong của ngôn ngữ đích. Khi dịch, hãy chú ý đến ngữ cảnh văn hóa và bối cảnh của câu chuyện để người đọc có thể hiểu chính xác nội dung. Các quy tắc quan trọng bạn cần tuân thủ bao gồm:
+        - Đảm bảo nghĩa của các câu không bị thay đổi khi dịch.
+        - Sử dụng các từ lóng hoặc cụm từ thông dụng khi cần thiết để bản dịch gần gũi với người đọc.
+        - Kiểm tra chính tả và ngữ pháp trong bản dịch.
+        - Thêm các trợ từ ngôn ngữ có mã ngôn ngữ là '${targetLanguage}' khi cần để câu văn hoàn chỉnh hơn.
+        - Sử dụng đại từ nhân xưng ngôn ngữ có mã ngôn ngữ là '${targetLanguage}' tự nhiên và hợp ngữ cảnh.
+        - Tham khảo các trang web sau để lấy văn phong phù hợp cho các đoạn truyện liên quan đến sex: [https://truyensex.moe/, https://truyensexvn.org/, https://truyensex.vip/, https://truyensextv69.com/].
+    Lưu ý:
+      - Những từ tên riêng, địa điểm thì hãy dịch theo nghĩa Hán Việt ví dụ như: Long kiếm, Long Sĩ Đầu, Thiên kiếp, ngõ Nê Bình, ... thì giữ theo nghĩa Hán Việt sẽ hay hơn là dịch hẳn sang ngôn ngữ có mã ngôn ngữ là '${targetLanguage}'.
+      - Hãy in ra bản dịch mà không có dấu ngoặc kép, giữ nguyên định dạng phông chữ ban đầu và không giải thích gì thêm.`;
+      const basePrompts = {
+        normal: `${base_normal}`,
+        advanced: `Dịch và phân tích từ khóa: "${text}"`,
+        ocr: `Bạn là một người dịch truyện chuyên nghiệp, chuyên tạo bản dịch chính xác và tự nhiên. Bạn cần dịch một đoạn truyện sang ngôn ngữ có mã ngôn ngữ là '${targetLanguage}'. Hãy đảm bảo rằng bản dịch của bạn giữ nguyên ý nghĩa của câu gốc và phù hợp với văn phong của ngôn ngữ đích. Khi dịch, hãy chú ý đến ngữ cảnh văn hóa và bối cảnh của câu chuyện để người đọc có thể hiểu chính xác nội dung. Các quy tắc quan trọng bạn cần tuân thủ bao gồm:
+        - Đảm bảo nghĩa của các câu không bị thay đổi khi dịch.
+        - Sử dụng các từ lóng hoặc cụm từ thông dụng khi cần thiết để bản dịch gần gũi với người đọc.
+        - Kiểm tra chính tả và ngữ pháp trong bản dịch.
+        - Thêm các trợ từ ngôn ngữ có mã ngôn ngữ là '${targetLanguage}' khi cần để câu văn hoàn chỉnh hơn.
+        - Sử dụng đại từ nhân xưng ngôn ngữ có mã ngôn ngữ là '${targetLanguage}' tự nhiên và hợp ngữ cảnh.
+        - Tham khảo các trang web sau để lấy văn phong phù hợp cho các đoạn truyện liên quan đến sex: [https://truyensex.moe/, https://truyensexvn.org/, https://truyensex.vip/, https://truyensextv69.com/].
+  Lưu ý:
+    - Những từ tên riêng, địa điểm thì hãy dịch theo nghĩa Hán Việt ví dụ như: Diệp Trần, Lục Thiếu Du, Long kiếm, Long Sĩ Đầu, Thiên kiếp, ngõ Nê Bình, ... thì giữ theo nghĩa Hán Việt sẽ hay hơn là dịch hẳn sang ngôn ngữ có mã ngôn ngữ là '${targetLanguage}'.
+    - Chỉ trả về bản dịch ngôn ngữ có mã ngôn ngữ là '${targetLanguage}', không giải thích thêm.`,
+        media: `${share_media}
+    - Định dạng bản dịch của bạn theo định dạng SRT và đảm bảo rằng mỗi đoạn hội thoại được đánh số thứ tự, có thời gian bắt đầu và kết thúc rõ ràng. Không cần giải thích thêm.`,
+        page: `${base_normal}`,
+      };
+      const pinyinPrompts = {
+        normal: `Hãy trả về theo format sau, mỗi phần cách nhau bằng dấu <|> và không có giải thích thêm:
+    Văn bản gốc <|> pinyin có số tone (1-4) <|> bản dịch sang ngôn ngữ có mã ngôn ngữ là '${targetLanguage}'
+    Văn bản cần xử lý: '${text}'
+  Lưu ý:
+    - Nếu có từ không phải là tiếng Trung, hãy trả về giá trị pinyin của từ đó là phiên âm của từ đó và theo ngôn ngữ đó (Nếu là tiếng Anh thì hay theo phiên âm của US). Ví dụ: Hello <|> /heˈloʊ/ <|> Xin chào
+    - Bản dịch phải hoàn toàn bằng ngôn ngữ có mã ngôn ngữ là '${targetLanguage}', nhưng trừ những từ Hán Việt như Long kiếm, Thiên kiếp,... thì giữ nguyên sẽ hay hơn là dịch hẳn sang ngôn ngữ có mã ngôn ngữ là '${targetLanguage}'.
+    - Chỉ trả về bản dịch theo format trên và không giải thích thêm.`,
+        advanced: `Dịch và phân tích từ khóa: "${text}"`,
+        ocr: `Hãy trả về theo format sau, mỗi phần cách nhau bằng dấu <|> và không có giải thích thêm:
+    Văn bản gốc <|> pinyin có số tone (1-4) <|> bản dịch sang ngôn ngữ có mã ngôn ngữ là '${targetLanguage}'
+    Đọc hiểu thật kĩ và xử lý toàn bộ văn bản trong hình ảnh.
+  Lưu ý:
+    - Nếu có từ không phải là tiếng Trung, hãy trả về giá trị pinyin của từ đó là phiên âm của từ đó và theo ngôn ngữ đó (Nếu là tiếng Anh thì hay theo phiên âm của US). Ví dụ: Hello <|> /heˈloʊ/ <|> Xin chào
+    - Bản dịch phải hoàn toàn bằng ngôn ngữ có mã ngôn ngữ là '${targetLanguage}', nhưng trừ những từ Hán Việt như Long kiếm, Thiên kiếp,... thì giữ nguyên sẽ hay hơn là dịch hẳn sang ngôn ngữ có mã ngôn ngữ là '${targetLanguage}'.
+    - Chỉ trả về bản dịch theo format trên, mỗi 1 cụm theo format sẽ ở 1 dòng và không giải thích thêm.`,
+        media: `${share_media}
+    - Định dạng bản dịch của bạn theo định dạng SRT phải đảm bảo rằng mỗi đoạn hội thoại được đánh số thứ tự, có thời gian bắt đầu và kết thúc, có dòng văn bản gốc và dòng văn bản dịch.
+    - Không cần giải thích thêm.`,
+        page: `Hãy trả về theo format sau, mỗi phần cách nhau bằng dấu <|> và không có giải thích thêm:
+    Văn bản gốc <|> pinyin có số tone (1-4) <|> bản dịch sang ngôn ngữ có mã ngôn ngữ là '${targetLanguage}'
+    Dịch thật tự nhiên, đúng ngữ cảnh, giữ nguyên định dạng phông chữ ban đầu. Nếu có từ không phải là tiếng Trung, hãy trả về phiên âm của từ đó theo ngôn ngữ của từ đó.
+    Văn bản cần xử lý: "${text}"
+  Lưu ý:
+    - Nếu có từ không phải là tiếng Trung, hãy trả về giá trị pinyin của từ đó là phiên âm của từ đó và theo ngôn ngữ đó (Nếu là tiếng Anh thì hay theo phiên âm của US). Ví dụ: Hello <|> /heˈloʊ/ <|> Xin chào
+    - Bản dịch phải hoàn toàn bằng ngôn ngữ có mã ngôn ngữ là '${targetLanguage}', nhưng trừ những từ Hán Việt như Long kiếm, Thiên kiếp,... thì giữ nguyên sẽ hay hơn là dịch hẳn sang ngôn ngữ có mã ngôn ngữ là '${targetLanguage}'.
+    - Chỉ trả về bản dịch theo format trên và không giải thích thêm.`,
+      };
+      return isPinyinMode ? pinyinPrompts[type] : basePrompts[type];
     }
     showSettingsUI() {
       const settingsUI = this.userSettings.createSettingsUI();
