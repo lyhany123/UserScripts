@@ -9,22 +9,22 @@
 // ==/UserScript==
 
 (function() {
-    'use strict';
+    "use strict";
     function cloneAndFixDiv() {
-        const originalDiv = document.querySelector('.block-outer-main');
+        const originalDiv = document.querySelector(".block-outer-main");
         if (originalDiv) {
             const clonedDiv = originalDiv.cloneNode(true);
             Object.assign(clonedDiv.style, {
-                position: 'fixed',
-                bottom: '9px',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                width: 'auto',
-                zIndex: '9999',
-                backgroundColor: 'transparent'
+                position: "fixed",
+                bottom: "25px",
+                left: "50%",
+                transform: "translateX(-50%)",
+                width: "auto",
+                zIndex: "2000000 !important",
+                backgroundColor: "transparent",
             });
             document.body.appendChild(clonedDiv);
         }
     }
-    window.addEventListener('load', cloneAndFixDiv);
+    window.addEventListener("load", cloneAndFixDiv);
 })();
