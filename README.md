@@ -162,6 +162,6 @@ Dự án này được phân phối dưới giấy phép GNU General Public Lice
   Made with ❤️ by King1x32
   <br>
   <a href="https://github.com/king1x32">GitHub</a> •
-  <a href="https://discord.gg/rhq5zgP79G">Discord</a> •
-  <a href="https://t.me/geminiaitranslator">Telegram</a>
+  <a href="https://discord.gg/v2DsBW6d">Discord</a> •
+  <a href="https://t.me/king1x32">Telegram</a>
 </div>

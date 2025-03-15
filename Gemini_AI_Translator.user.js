@@ -12,7 +12,9 @@
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        GM_registerMenuCommand
-// @connect      api.gemini.com
+// @grant        unsafeWindow
+// @inject-into  page
+// @connect      generativelanguage.googleapis.com
 // @require      https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js
 // @require      https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js
 // @require      https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js
@@ -618,22 +620,22 @@
       });
     }
   }
-  const bypassCSP = () => {
-    const style = document.createElement("style");
-    style.textContent = `
-    .translator-tools-container {
-      position: fixed !important;
-      bottom: 20px !important;
-      right: 20px !important;
-      z-index: 2147483646 !important;
-      font-family: Arial, sans-serif !important;
-      display: block !important;
-      visibility: visible !important;
-      opacity: 1 !important;
-    }
-  `;
-    document.head.appendChild(style);
-  };
+  // const bypassCSP = () => {
+  //   const style = document.createElement("style");
+  //   style.textContent = `
+  //   .translator-tools-container {
+  //     position: fixed !important;
+  //     bottom: 40px !important;
+  //     right: 20px !important;
+  //     z-index: 2147483646 !important;
+  //     font-family: Arial, sans-serif !important;
+  //     display: block !important;
+  //     visibility: visible !important;
+  //     opacity: 1 !important;
+  //   }
+  // `;
+  //   document.head.appendChild(style);
+  // };
   class UserSettings {
     constructor(translator) {
       this.translator = translator;
@@ -658,7 +660,7 @@
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        background: ${isDark ? "#222" : "#f5f5f5"};
+        background: ${isDark ? "#333333" : "#f5f5f5"};
         color: ${isDark ? "#ddd" : "#333"};
         padding: 20px;
         border-radius: 10px;
@@ -1553,7 +1555,7 @@
   <div class="settings-grid">
       <span class="settings-label">Dịch text trong hộp nhập:</span>
       <div class="shortcut-container">
-          <span class="shortcut-prefix">Alt +</span>
+          <span class="shortcut-prefix">Command/Alt +</span>
           <input type="text" id="inputTranslationKey" class="shortcut-input settings-input"
               value="${this.settings.inputTranslation?.shortcut?.key || "t"}"
               ${!this.settings.inputTranslation?.enabled ? "disabled" : ""}>
@@ -1562,7 +1564,7 @@
   <div class="settings-grid">
     <span class="settings-label">Dịch trang:</span>
     <div class="shortcut-container">
-      <span class="shortcut-prefix">Alt +</span>
+      <span class="shortcut-prefix">Command/Alt +</span>
       <input type="text" id="pageTranslateKey" class="shortcut-input settings-input"
         value="${this.settings.shortcuts.pageTranslate.key}" ${!this.settings.shortcuts?.enabled ? "disabled" : ""
         }>
@@ -1571,7 +1573,7 @@
   <div class="settings-grid">
     <span class="settings-label">Dịch nhanh:</span>
     <div class="shortcut-container">
-      <span class="shortcut-prefix">Alt +</span>
+      <span class="shortcut-prefix">Command/Alt +</span>
       <input type="text" id="quickKey" class="shortcut-input settings-input"
         value="${this.settings.shortcuts.quickTranslate.key}" ${!this.settings.shortcuts?.enabled ? "disabled" : ""
         }>
@@ -1580,7 +1582,7 @@
   <div class="settings-grid">
     <span class="settings-label">Dịch popup:</span>
     <div class="shortcut-container">
-      <span class="shortcut-prefix">Alt +</span>
+      <span class="shortcut-prefix">Command/Alt +</span>
       <input type="text" id="popupKey" class="shortcut-input settings-input"
         value="${this.settings.shortcuts.popupTranslate.key}" ${!this.settings.shortcuts?.enabled ? "disabled" : ""
         }>
@@ -1589,7 +1591,7 @@
   <div class="settings-grid">
     <span class="settings-label">Dịch nâng cao:</span>
     <div class="shortcut-container">
-      <span class="shortcut-prefix">Alt +</span>
+      <span class="shortcut-prefix">Command/Alt +</span>
       <input type="text" id="advancedKey" class="shortcut-input settings-input" value="${this.settings.shortcuts.advancedTranslate.key
         }" ${!this.settings.shortcuts?.enabled ? "disabled" : ""}>
     </div>
@@ -2951,7 +2953,7 @@
     }
     getCurrentTheme() {
       const mode =
-        this.translator.userSettings.settings.theme || CONFIG.THEME.mode;
+        this.translator.userSettings.settings.theme ? this.translator.userSettings.settings.theme : CONFIG.THEME.mode;
       const theme = CONFIG.THEME[mode];
       return {
         background: theme.background,
@@ -4722,68 +4724,26 @@
         font-size: 12px;
         opacity: 0.8;
     }
-    .translation-container {
-        margin: 10px 0;
-        padding: 10px;
-        border-left: 3px solid #4CAF50;
-        background: #f8f9fa;
-        font-family: Arial, sans-serif;
+    .translation-div p {
+      margin: 5px 0;
     }
-    .original-text {
-        color: #333;
-        margin-bottom: 5px;
-        font-size: 15px;
-        line-height: 1.5;
+    .translation-div strong {
+      font-weight: bold;
     }
-    .pinyin-text {
-        color: #666;
-        font-size: 0.9em;
-        margin-bottom: 5px;
-        font-style: italic;
-        line-height: 1.4;
+    .translator-settings-container,
+    .translator-tools-container,
+    .translation-div,
+    .draggable,
+    .page-translate-button,
+    .translator-tools-dropdown,
+    .translator-notification,
+    .translator-content,
+    .translator-context-menu,
+    .translator-overlay,
+    .translator-guide,
+    .center-translate-status {
+      z-index: 2147483647 !important;
     }
-      .translated-text {
-          color: #2196F3;
-          font-size: 15px;
-          line-height: 1.5;
-          margin-top: 5px;
-      }
-      /* Dark mode */
-      @media (prefers-color-scheme: dark) {
-          .translation-container {
-              background: #2d2d2d;
-              border-left-color: #66bb6a;
-          }
-          .original-text {
-              color: #e0e0e0;
-          }
-          .pinyin-text {
-              color: #b0b0b0;
-          }
-          .translated-text {
-              color: #64b5f6;
-          }
-      }
-      .translator-settings-container,
-      .translator-tools-container,
-      .translation-div,
-      .draggable,
-      .page-translate-button,
-      .translator-tools-dropdown,
-      .translator-notification,
-      .translator-content,
-      .translator-context-menu,
-      .translator-overlay,
-      .translator-guide,
-      .center-translate-status {
-        z-index: 2147483647 !important;
-      }
-      .translation-div p {
-        margin: 5px 0;
-      }
-      .translation-div strong {
-        font-weight: bold;
-      }
     `);
       // Gán các listeners
       this.settingsShortcutListener = this.handleSettingsShortcut;
@@ -4841,23 +4801,6 @@
           }
         }
       }, 1000);
-    }
-    checkOverlap(rect1, rect2) {
-      return !(
-        rect1.right < rect2.left ||
-        rect1.left > rect2.right ||
-        rect1.bottom < rect2.top ||
-        rect1.top > rect2.bottom
-      );
-    }
-    adjustPosition(newRect, existingRects) {
-      let adjusted = { ...newRect };
-      let offset = 0;
-      while (existingRects.some((r) => this.checkOverlap(adjusted, r))) {
-        offset += 5;
-        adjusted.top = newRect.top + offset;
-      }
-      return adjusted;
     }
     createCloseButton() {
       const button = document.createElement("span");
@@ -4946,7 +4889,7 @@
     ) {
       this.removeTranslateButton();
       const mode =
-        this.translator.userSettings.settings.theme || CONFIG.THEME.mode;
+        this.translator.userSettings.settings.theme ? this.translator.userSettings.settings.theme : CONFIG.THEME.mode;
       const theme = CONFIG.THEME[mode];
       const displayOptions =
         this.translator.userSettings.settings.displayOptions;
@@ -5031,15 +4974,15 @@
       width: 8px;
     }
     .translator-content::-webkit-scrollbar-track {
-      background: ${theme.background === "#222" ? "#333" : "#f1f1f1"};
+      background: ${theme.background === "#333333" ? "#222222" : "#f1f1f1"};
       border-radius: 4px;
     }
     .translator-content::-webkit-scrollbar-thumb {
-      background: ${theme.background === "#222" ? "#666" : "#888"};
+      background: ${theme.background === "#333333" ? "#666" : "#888"};
       border-radius: 4px;
     }
     .translator-content::-webkit-scrollbar-thumb:hover {
-      background: ${theme.background === "#222" ? "#888" : "#555"};
+      background: ${theme.background === "#333333" ? "#888" : "#555"};
     }
   `;
       document.head.appendChild(scrollbarStyle);
@@ -5059,7 +5002,7 @@
         Object.assign(originalContainer.style, {
           color: theme.content,
           padding: "10px 15px",
-          backgroundColor: `${theme.background === "#222" ? "#333" : "#f5f5f5"
+          backgroundColor: `${theme.background === "#333333" ? "#222222" : "#f5f5f5"
             }`,
           borderRadius: "8px",
           border: `1px solid ${theme.border}`,
@@ -5079,7 +5022,7 @@
         Object.assign(originalContainer.style, {
           color: theme.content,
           padding: "10px 15px",
-          backgroundColor: `${theme.background === "#222" ? "#333" : "#f5f5f5"
+          backgroundColor: `${theme.background === "#333333" ? "#222222" : "#f5f5f5"
             }`,
           borderRadius: "8px",
           border: `1px solid ${theme.border}`,
@@ -5099,7 +5042,7 @@
         Object.assign(pinyinContainer.style, {
           color: theme.content,
           padding: "10px 15px",
-          backgroundColor: `${theme.background === "#222" ? "#333" : "#f5f5f5"
+          backgroundColor: `${theme.background === "#333333" ? "#222222" : "#f5f5f5"
             }`,
           borderRadius: "8px",
           border: `1px solid ${theme.border}`,
@@ -5115,7 +5058,7 @@
       Object.assign(translationContainer.style, {
         color: theme.content,
         padding: "10px 15px",
-        backgroundColor: `${theme.background === "#222" ? "#333" : "#f5f5f5"}`,
+        backgroundColor: `${theme.background === "#333333" ? "#222222" : "#f5f5f5"}`,
         borderRadius: "8px",
         border: `1px solid ${theme.border}`,
         wordBreak: "break-word",
@@ -5200,7 +5143,7 @@
         this.currentTranslateButton.remove();
       }
       const mode =
-        this.translator.userSettings.settings.theme || CONFIG.THEME.mode;
+        this.translator.userSettings.settings.theme ? this.translator.userSettings.settings.theme : CONFIG.THEME.mode;
       const theme = CONFIG.THEME[mode];
       const button = document.createElement("button");
       button.textContent = "Dịch";
@@ -5646,15 +5589,19 @@
       }, 10000);
       const pageShortcut =
         this.translator.userSettings.settings.shortcuts.pageTranslate;
-      document.addEventListener("keydown", (e) => {
-        if (
-          (e.altKey || e.metaKey) &&
-          e.key.toLowerCase() === pageShortcut.key.toLowerCase()
-        ) {
-          e.preventDefault();
-          this.handlePageTranslation();
-        }
-      });
+      const shortcutsEnabled =
+        this.translator.userSettings.settings.shortcuts?.enabled;
+      if (shortcutsEnabled) {
+        document.addEventListener("keydown", (e) => {
+          if (
+            (e.altKey || e.metaKey) &&
+            e.key.toLowerCase() === pageShortcut.key.toLowerCase()
+          ) {
+            e.preventDefault();
+            this.handlePageTranslation();
+          }
+        });
+      }
     }
     setupTranslatorTools() {
       const isEnabled =
@@ -5664,7 +5611,7 @@
         return;
       }
       this.removeToolsContainer();
-      bypassCSP();
+      // bypassCSP();
       const observer = new MutationObserver(() => {
         const container = document.querySelector(".translator-tools-container");
         if (
@@ -5689,8 +5636,8 @@
       container.className = "translator-tools-container";
       container.style.cssText = `
     position: fixed !important;
-    bottom: 20px !important;
-    right: 20px !important;
+    bottom: 40px;
+    right: 20px;
     z-index: 2147483646 !important;
     display: block !important;
     visibility: visible !important;
@@ -5740,7 +5687,7 @@
       const mainButton = document.createElement("button");
       mainButton.className = "translator-tools-button";
       mainButton.innerHTML = `
-        <span class="tools-icon">🌐</span>
+        <span class="tools-icon">⚙️</span>
         <span class="tools-text">Tools Dịch</span>
     `;
       const dropdown = document.createElement("div");
@@ -5937,11 +5884,13 @@
       document.body.appendChild(container);
       GM_addStyle(`
   .translator-tools-container {
-    position: fixed;
-    bottom: 20px;
+    position: fixed !important;
+    bottom: 40px;
     right: 20px;
     z-index: 2147483646 !important;
-    font-family: Arial, sans-serif;
+    font-family: Arial, sans-serif !important;
+    display: flex !important;
+    align-items: center !important;
   }
   .translator-tools-button {
     display: flex;
@@ -5956,6 +5905,7 @@
     transition: all 0.3s ease;
     box-shadow: 0 2px 10px rgba(0,0,0,0.2);
     font-size: 15px;
+    min-width: 100px;
   }
   .translator-tools-button:hover {
     transform: translateY(-2px);
@@ -5975,7 +5925,7 @@
     border-radius: 10px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     padding: 5px;
-    min-width: 200px;
+    min-width: 100px;
   }
   .translator-tools-item {
     display: flex;
@@ -6554,8 +6504,7 @@
                 const pos = calculatePosition();
                 const padding = 2;
                 const mode =
-                  this.translator.userSettings.settings.theme ||
-                  CONFIG.THEME.mode;
+                  this.translator.userSettings.settings.theme ? this.translator.userSettings.settings.theme : CONFIG.THEME.mode;
                 Object.assign(overlay.style, {
                   position: "fixed",
                   left: `${pos.x}px`,
@@ -6927,7 +6876,7 @@ Return ONLY a JSON object like:
         }
       });
       const mode =
-        this.translator.userSettings.settings.theme || CONFIG.THEME.mode;
+        this.translator.userSettings.settings.theme ? this.translator.userSettings.settings.theme : CONFIG.THEME.mode;
       GM_addStyle(`
         .translator-context-menu {
           position: fixed;
