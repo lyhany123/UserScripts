@@ -13,7 +13,7 @@
 // @grant        GM_setValue
 // @grant        GM_registerMenuCommand
 // @grant        unsafeWindow
-// @inject-into  page
+// @inject-into  auto
 // @connect      generativelanguage.googleapis.com
 // @require      https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js
 // @require      https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js
@@ -213,7 +213,7 @@
         background: "#cccccc",
         text: "#333333",
         border: "#bbb",
-        title: "#222222",
+        title: "#202020",
         content: "#555",
         button: {
           close: { background: "#ff4444", text: "#ddd" },
@@ -223,7 +223,7 @@
       dark: {
         background: "#333333",
         text: "#cccccc",
-        border: "#5555",
+        border: "#555",
         title: "#eeeeee",
         content: "#bbb",
         button: {
@@ -238,6 +238,7 @@
         padding: "10px",
         backgroundColor: "#f0f0f0",
         borderLeft: "3px solid #4CAF50",
+        borderRadius: "8px",
         color: "#333",
         position: "relative",
         fontFamily: "SF Pro Rounded, sans-serif",
@@ -265,7 +266,7 @@
       button: {
         position: "fixed",
         border: "none",
-        borderRadius: "3px",
+        borderRadius: "8px",
         padding: "5px 10px",
         cursor: "pointer",
         zIndex: "2147483647 !important",
@@ -587,15 +588,15 @@
       const style = document.createElement("style");
       style.textContent = `
       .translator-tools-container {
-        bottom: 20px !important;
-        right: 20px !important;
+        bottom: 25px !important;
+        right: 5px !important;
       }
       .translator-tools-button {
         padding: 8px 15px !important;
         font-size: 14px !important;
       }
       .translator-tools-dropdown {
-        width: 250px !important;
+        min-width: 165px !important;
         max-height: 60vh !important;
         overflow-y: auto !important;
       }
@@ -626,8 +627,8 @@
   //   .translator-tools-container {
   //     position: fixed !important;
   //     bottom: 40px !important;
-  //     right: 20px !important;
-  //     z-index: 2147483646 !important;
+  //     right: 25px !important;
+  //     z-index: 2147483647 !important;
   //     font-family: Arial, sans-serif !important;
   //     display: block !important;
   //     visibility: visible !important;
@@ -663,7 +664,7 @@
         background: ${isDark ? "#333333" : "#f5f5f5"};
         color: ${isDark ? "#ddd" : "#333"};
         padding: 20px;
-        border-radius: 10px;
+        border-radius: 8px;
         z-index: 2147483647 !important;
         width: auto;
         max-width: 90vw;
@@ -725,7 +726,7 @@
             font-size: 14px !important;
             padding: 5px !important;
             margin: 5px 5px 5px 5px;
-            border-radius: 4px !important;
+            border-radius: 8px !important;
             border: 1px solid ${isDark ? "#666" : "#bbb"} !important;
             background: ${isDark ? "#444" : "#ddd"} !important;
             color: ${isDark ? "#ddd" : "#000"} !important;
@@ -752,7 +753,7 @@
             background: ${isDark ? "#444" : "#ddd"};
             color: ${isDark ? "#ddd" : "#000"} !important;
             padding: 5px 15px !important;
-            border-radius: 4px !important;
+            border-radius: 8px !important;
             cursor: pointer !important;
             border: none !important;
             margin: 5px !important;
@@ -761,7 +762,7 @@
             background: ${isDark ? "#666" : "#ddd"} !important;
             color: ${isDark ? "#ddd" : "#000"} !important;
             padding: 5px 15px !important;
-            border-radius: 4px !important;
+            border-radius: 8px !important;
             cursor: pointer !important;
             border: none !important;
             margin: 5px !important;
@@ -772,7 +773,7 @@
         #saveSettings {
             background: #007BFF !important;
             padding: 5px 15px !important;
-            border-radius: 4px !important;
+            border-radius: 8px !important;
             cursor: pointer !important;
             border: none !important;
             margin: 5px !important;
@@ -784,7 +785,7 @@
           font-family: Arial, sans-serif !important;
           font-size: 14px !important;
           border: none !important;
-          border-radius: 6px !important;
+          border-radius: 8px !important;
           cursor: pointer !important;
           transition: all 0.2s ease !important;
           font-weight: 500 !important;
@@ -856,7 +857,7 @@
           background: ${isDark ? "#444" : "#fff"};
           color: ${isDark ? "#fff" : "#000"};
           border: 1px solid ${isDark ? "#666" : "#ccc"};
-          border-radius: 4px;
+          border-radius: 8px;
           font-family: monospace;
           font-size: 13px;
           resize: vertical;
@@ -873,11 +874,11 @@
     <label>
       <input type="radio" name="theme" value="light" ${!isDark ? "checked" : ""
         }>
-      <span>Sáng</span>
+      <span class="settings-label">Sáng</span>
     </label>
     <label>
       <input type="radio" name="theme" value="dark" ${isDark ? "checked" : ""}>
-      <span>Tối</span>
+      <span class="settings-label">Tối</span>
     </label>
   </div>
 </div>
@@ -887,18 +888,18 @@
     <label>
       <input type="radio" name="apiProvider" value="gemini" ${this.settings.apiProvider === "gemini" ? "checked" : ""
         }>
-      <span>Gemini</span>
+      <span class="settings-label">Gemini</span>
     </label>
     <label>
       <input type="radio" name="apiProvider" value="openai" disabled>
-      <span>OpenAI</span>
+      <span class="settings-label">OpenAI</span>
     </label>
   </div>
 </div>
 <div style="margin-bottom: 15px;">
   <h3>API KEYS</h3>
   <div id="geminiKeys" style="margin-bottom: 10px;">
-    <h4 style="margin-bottom: 5px;">Gemini API Keys</h4>
+    <h4 class="settings-label" style="margin-bottom: 5px;">Gemini API Keys</h4>
     <div class="api-keys-container">
       ${this.settings.apiKey.gemini
           .map(
@@ -913,10 +914,10 @@
           )
           .join("")}
     </div>
-    <button id="addGeminiKey" style="background: #28a745; margin-top: 5px;">+ Add Gemini Key</button>
+    <button id="addGeminiKey" class="settings-label" style="background: #28a745; margin-top: 5px;">+ Add Gemini Key</button>
   </div>
   <div id="openaiKeys" style="margin-bottom: 10px;">
-    <h4 style="margin-bottom: 5px;">OpenAI API Keys</h4>
+    <h4 class="settings-label" style="margin-bottom: 5px;">OpenAI API Keys</h4>
     <div class="api-keys-container">
       ${this.settings.apiKey.openai
           .map(
@@ -931,7 +932,7 @@
           )
           .join("")}
     </div>
-    <button id="addOpenaiKey" style="background: #28a745; margin-top: 5px;">+ Add OpenAI Key</button>
+    <button id="addOpenaiKey" class="settings-label" style="background: #28a745; margin-top: 5px;">+ Add OpenAI Key</button>
   </div>
 </div>
 <div style="margin-bottom: 15px;">
@@ -1058,7 +1059,7 @@
           background: ${isDark ? "#444" : "#fff"};
           color: ${isDark ? "#fff" : "#000"};
           border: 1px solid ${isDark ? "#666" : "#ccc"};
-          border-radius: 4px;
+          border-radius: 8px;
           font-family: monospace;
           font-size: 13px;"
         >${this.settings.pageTranslation?.customSelectors?.join("\n") || ""
@@ -1077,7 +1078,7 @@
           background: ${isDark ? "#333" : "#f5f5f5"};
           color: ${isDark ? "#999" : "#666"};
           border: 1px solid ${isDark ? "#555" : "#ddd"};
-          border-radius: 4px;
+          border-radius: 8px;
           font-family: monospace;
           font-size: 13px;"
         >${this.settings.pageTranslation?.defaultSelectors?.join("\n") || ""
@@ -1557,8 +1558,7 @@
       <div class="shortcut-container">
           <span class="shortcut-prefix">Command/Alt +</span>
           <input type="text" id="inputTranslationKey" class="shortcut-input settings-input"
-              value="${this.settings.inputTranslation?.shortcut?.key || "t"}"
-              ${!this.settings.inputTranslation?.enabled ? "disabled" : ""}>
+              value="${this.settings.inputTranslation?.shortcut?.key || "t"}">
       </div>
   </div>
   <div class="settings-grid">
@@ -1566,8 +1566,7 @@
     <div class="shortcut-container">
       <span class="shortcut-prefix">Command/Alt +</span>
       <input type="text" id="pageTranslateKey" class="shortcut-input settings-input"
-        value="${this.settings.shortcuts.pageTranslate.key}" ${!this.settings.shortcuts?.enabled ? "disabled" : ""
-        }>
+        value="${this.settings.shortcuts.pageTranslate.key}">
     </div>
   </div>
   <div class="settings-grid">
@@ -1575,8 +1574,7 @@
     <div class="shortcut-container">
       <span class="shortcut-prefix">Command/Alt +</span>
       <input type="text" id="quickKey" class="shortcut-input settings-input"
-        value="${this.settings.shortcuts.quickTranslate.key}" ${!this.settings.shortcuts?.enabled ? "disabled" : ""
-        }>
+        value="${this.settings.shortcuts.quickTranslate.key}">
     </div>
   </div>
   <div class="settings-grid">
@@ -1584,8 +1582,7 @@
     <div class="shortcut-container">
       <span class="shortcut-prefix">Command/Alt +</span>
       <input type="text" id="popupKey" class="shortcut-input settings-input"
-        value="${this.settings.shortcuts.popupTranslate.key}" ${!this.settings.shortcuts?.enabled ? "disabled" : ""
-        }>
+        value="${this.settings.shortcuts.popupTranslate.key}">
     </div>
   </div>
   <div class="settings-grid">
@@ -1593,7 +1590,7 @@
     <div class="shortcut-container">
       <span class="shortcut-prefix">Command/Alt +</span>
       <input type="text" id="advancedKey" class="shortcut-input settings-input" value="${this.settings.shortcuts.advancedTranslate.key
-        }" ${!this.settings.shortcuts?.enabled ? "disabled" : ""}>
+        }">
     </div>
   </div>
 </div>
@@ -2030,7 +2027,7 @@
         backgroundColor,
         color: textColor,
         padding: "10px 20px",
-        borderRadius: "5px",
+        borderRadius: "8px",
         zIndex: "2147483647 !important",
         animation: "fadeInOut 2s ease",
         fontFamily: "Arial, sans-serif",
@@ -2372,7 +2369,6 @@
           isToolsEnabled.toString()
         );
         this.translator.ui.removeToolsContainer();
-        this.translator.ui.removeAllProcessingIndicators();
         this.translator.ui.resetState();
         const overlays = document.querySelectorAll(".translator-overlay");
         overlays.forEach((overlay) => overlay.remove());
@@ -2757,7 +2753,7 @@
       document.addEventListener('keydown', (e) => {
         const settings = this.translator.userSettings.settings;
         const shortcut = settings.inputTranslation?.shortcut;
-        if (!settings.inputTranslation?.enabled || !shortcut) return;
+        if (!settings.inputTranslation?.enabled || !settings.shortcuts?.enabled) return;
         if ((e.altKey || e.metaKey) && e.key.toLowerCase() === shortcut.key.toLowerCase()) {
           e.preventDefault();
           const activeElement = document.activeElement;
@@ -2840,7 +2836,7 @@
             z-index: 2147483647 !important;
             pointer-events: auto;
             background: ${theme.background};
-            border-radius: 3px;
+            border-radius: 8px;
             padding: 2px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.3);
             border: 1px solid ${theme.border};
@@ -2857,7 +2853,7 @@
             background: transparent;
             color: ${theme.text};
             border: none;
-            border-radius: 3px;
+            border-radius: 8px;
             padding: 4px;
             font-size: 16px;
             cursor: pointer;
@@ -3489,7 +3485,6 @@
           text = document.title;
         }
         text = text.slice(0, 1000).trim();
-        console.log("text: ", text);
         if (!text.trim()) {
           throw new Error("Không tìm thấy nội dung để phát hiện ngôn ngữ");
         }
@@ -3805,31 +3800,49 @@
         const doc = parser.parseFromString(htmlContent, "text/html");
         const scripts = doc.getElementsByTagName("script");
         const styles = doc.getElementsByTagName("style");
-        [...scripts, ...styles].forEach((element) => element.remove());
+        [...scripts, ...styles].forEach(element => element.remove());
         const translatableNodes = this.getTranslatableHTMLNodes(doc.body);
         const chunks = this.createHTMLChunks(translatableNodes);
         this.translator.ui.showTranslatingStatus();
+        const { translationMode: mode } = this.translator.userSettings.settings.displayOptions;
+        const SEPARATOR = "<<|SPLIT|>>";
         for (const chunk of chunks) {
-          const textsToTranslate = chunk.nodes.map((node) => ({
-            text: node.textContent.trim(),
-            type: node.nodeType,
-            isAttribute: node.isAttribute,
-            attributeName: node.attributeName,
-          }));
-          const textJoin = `${textsToTranslate
-            .map((item) => item.text)
-            .join("\n---\n")}`;
-          const prompt = this.translator.createPrompt(textJoin, "page");
-          const translation = await this.translator.api.request(prompt);
-          const translatedTexts = translation.split("\n---\n");
+          const textsToTranslate = chunk.nodes
+            .map(node => ({
+              text: node.textContent.trim(),
+              type: node.nodeType,
+              isAttribute: node.isAttribute,
+              attributeName: node.attributeName
+            }))
+            .filter(item => item.text.length > 0);
+          if (textsToTranslate.length === 0) continue;
+          const textToTranslate = textsToTranslate
+            .map(item => item.text)
+            .join(SEPARATOR);
+          const prompt = this.translator.createPrompt(textToTranslate, "page");
+          const translatedText = await this.translator.api.request(prompt);
+          const translatedParts = translatedText.split(SEPARATOR);
           chunk.nodes.forEach((node, index) => {
+            if (index >= translatedParts.length) return;
+            const translation = translatedParts[index];
+            if (!translation) return;
+            const originalText = node.textContent.trim();
+            let formattedTranslation = "";
+            if (mode === "translation_only") {
+              formattedTranslation = translation;
+            } else if (mode === "parallel") {
+              formattedTranslation = `[Gốc]: ${originalText}\n [DỊCH]: ${translation.split("<|>")[2] || translation}   `;
+            } else if (mode === "language_learning") {
+              let sourceHTML = "";
+              if (showSource) {
+                sourceHTML = `[Gốc]: ${originalText}`;
+              }
+              formattedTranslation = `${sourceHTML}\n [Pinyin]: ${translation.split("<|>")[1] || ""}\n [Dịch]: ${translation.split("<|>")[2] || translation}   `;
+            }
             if (node.isAttribute) {
-              node.ownerElement.setAttribute(
-                node.attributeName,
-                translatedTexts[index].trim()
-              );
+              node.ownerElement.setAttribute(node.attributeName, formattedTranslation.trim());
             } else {
-              node.textContent = translatedTexts[index].trim();
+              node.textContent = formattedTranslation.trim();
             }
           });
         }
@@ -3914,9 +3927,12 @@
         const totalPages = pdf.numPages;
         const canvas = document.createElement("canvas");
         const ctx = canvas.getContext("2d");
+        const { translationMode: mode } = this.translator.userSettings.settings.displayOptions;
+        const showSource = mode === "language_learning" &&
+          this.translator.userSettings.settings.displayOptions.languageLearning.showSource;
         for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
           const page = await pdf.getPage(pageNum);
-          const viewport = page.getViewport({ scale: 2.0 }); // Scale 2x để chất lượng tốt hơn
+          const viewport = page.getViewport({ scale: 2.0 });
           canvas.height = viewport.height;
           canvas.width = viewport.width;
           await page.render({
@@ -3931,21 +3947,46 @@
           });
           try {
             const ocrResult = await this.translator.ocr.processImage(imageFile);
-            if (ocrResult && ocrResult.trim()) {
-              const prompt = this.translator.createPrompt(ocrResult, "page");
-              const translated = await this.translator.api.request(prompt);
-              translatedContent.push({
-                pageNum,
-                original: ocrResult,
-                translated,
-              });
-            }
+            const processedTranslations = ocrResult.split('\n').map((trans) => {
+              switch (mode) {
+                case "translation_only":
+                  return `${trans.split("<|>")[0]?.trim() || ''}   `;
+                case "parallel":
+                  return `[GỐC]: ${trans.split("<|>")[0]?.trim() || ''}  [DỊCH]: ${trans.split("<|>")[2]?.trim() || ''}   `;
+                case "language_learning":
+                  let parts = [];
+                  if (showSource) {
+                    parts.push(`[GỐC]: ${trans.split("<|>")[0]?.trim() || ''}`);
+                  }
+                  const pinyin = trans.split("<|>")[1]?.trim();
+                  if (pinyin) {
+                    parts.push(`[PINYIN]: ${pinyin}`);
+                  }
+                  const translation = trans.split("<|>")[2]?.trim() || trans;
+                  parts.push(`[DỊCH]: ${translation}   `);
+                  return parts.join("  ");
+                default:
+                  return trans;
+              }
+            });
+            translatedContent.push({
+              pageNum,
+              original: ocrResult,
+              translations: processedTranslations,
+              displayMode: mode,
+              showSource
+            });
           } catch (error) {
             console.error(`Error processing page ${pageNum}:`, error);
             translatedContent.push({
               pageNum,
               original: `[Error on page ${pageNum}: ${error.message}]`,
-              translated: `[Translation Error: ${error.message}]`,
+              translations: [{
+                original: "",
+                translation: `[Translation Error: ${error.message}]`
+              }],
+              displayMode: mode,
+              showSource
             });
           }
           this.translator.ui.updateProgress(
@@ -3963,154 +4004,121 @@
     }
     generateEnhancedTranslatedPDF(translatedContent) {
       const htmlContent = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="UTF-8">
-        <style>
-          body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 20px;
-          }
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          line-height: 1.6;
+          max-width: 900px;
+          margin: 0 auto;
+          padding: 20px;
+        }
+        .page {
+          margin-bottom: 40px;
+          padding: 20px;
+          border: 1px solid #ddd;
+          border-radius: 8px;
+          page-break-after: always;
+        }
+        .page-number {
+          font-size: 18px;
+          font-weight: bold;
+          margin-bottom: 20px;
+          color: #666;
+        }
+        .content {
+          margin-bottom: 20px;
+        }
+        .section {
+          margin-bottom: 15px;
+          padding: 15px;
+          background: #fff;
+          border: 1px solid #eee;
+          border-radius: 8px;
+          white-space: pre-wrap;
+        }
+        .section-title {
+          font-weight: bold;
+          color: #333;
+          margin-bottom: 10px;
+        }
+        .section-content {
+          white-space: pre-wrap;
+          line-height: 1.5;
+        }
+        h3 {
+          color: #333;
+          margin: 10px 0;
+        }
+        @media print {
           .page {
-            margin-bottom: 40px;
-            padding: 20px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
             page-break-after: always;
           }
-          .page-number {
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 20px;
-            color: #666;
-          }
-          .content {
-            margin-bottom: 20px;
-          }
-          .original {
-            color: #666;
-            margin-bottom: 20px;
-            padding: 15px;
-            background: #f5f5f5;
-            border-radius: 5px;
-            white-space: pre-wrap;
-          }
-          .translated {
-            color: #000;
-            padding: 15px;
-            background: #fff;
-            border: 1px solid #eee;
-            border-radius: 5px;
-            white-space: pre-wrap;
-          }
-          h3 {
-            color: #333;
-            margin: 10px 0;
-          }
-          @media print {
-            .page {
-              page-break-after: always;
-            }
-          }
-        </style>
-      </head>
-      <body>
-        ${translatedContent
-          .map(
-            (page) => `
-          <div class="page">
-            <div class="page-number">Trang ${page.pageNum}</div>
-            <div class="content">
-              <h3>Bản gốc:</h3>
-              <div class="original">${page.original}</div>
-              <h3>Bản dịch:</h3>
-              <div class="translated">${page.translated}</div>
-            </div>
+        }
+      </style>
+    </head>
+    <body>
+      ${translatedContent.map(page => `
+        <div class="page">
+          <div class="page-number">Trang ${page.pageNum}</div>
+          <div class="content">
+            ${page.displayMode === "translation_only" ? `
+              <div class="section">
+                <div class="section-title">Bản dịch:</div>
+                <div class="section-content">${this.formatTranslationContent(page.translations.join('\n'))}</div>
+              </div>
+            ` : page.displayMode === "parallel" ? `
+              <div class="section">
+                <div class="section-content">${this.formatTranslationContent(page.translations.join('\n'))}</div>
+              </div>
+            ` : `
+              ${page.showSource ? `
+                <div class="section">
+                  <div class="section-title">Bản gốc:</div>
+                  <div class="section-content">${this.formatTranslationContent(page.original)}</div>
+                </div>
+              ` : ''}
+              ${page.translations.some(t => t.includes("[PINYIN]:")) ? `
+                <div class="section">
+                  <div class="section-title">Phiên âm:</div>
+                  <div class="section-content">${this.formatTranslationContent(
+        page.translations
+          .map(t => t.split("[PINYIN]:")[1]?.split("[DỊCH]:")[0]?.trim())
+          .filter(Boolean)
+          .join('\n')
+      )}</div>
+                </div>
+              ` : ''}
+              <div class="section">
+                <div class="section-title">Bản dịch:</div>
+                <div class="section-content">${this.formatTranslationContent(
+        page.translations
+          .map(t => t.split("[DỊCH]:")[1]?.trim())
+          .filter(Boolean)
+          .join('\n')
+      )}</div>
+              </div>
+            `}
           </div>
-        `
-          )
-          .join("")}
-      </body>
-      </html>
-    `;
+        </div>
+      `).join('')}
+    </body>
+    </html>
+  `;
       return new Blob([htmlContent], { type: "text/html" });
     }
-    generateTranslatedPDF(translatedContent) {
-      const htmlContent = `
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8">
-                <style>
-                    body {
-                        font-family: Arial, sans-serif;
-                        line-height: 1.6;
-                        max-width: 900px;
-                        margin: 0 auto;
-                        padding: 20px;
-                    }
-                    .page {
-                        margin-bottom: 40px;
-                        padding: 20px;
-                        border: 1px solid #ddd;
-                        border-radius: 5px;
-                        page-break-after: always;
-                    }
-                    .page-number {
-                        font-size: 18px;
-                        font-weight: bold;
-                        margin-bottom: 20px;
-                        color: #666;
-                    }
-                    .content {
-                        margin-bottom: 20px;
-                    }
-                    .original {
-                        color: #666;
-                        margin-bottom: 20px;
-                        padding: 15px;
-                        background: #f5f5f5;
-                        border-radius: 5px;
-                        white-space: pre-wrap;
-                    }
-                    .translated {
-                        color: #000;
-                        padding: 15px;
-                        background: #fff;
-                        border: 1px solid #eee;
-                        border-radius: 5px;
-                        white-space: pre-wrap;
-                    }
-                    h3 {
-                        color: #333;
-                        margin: 10px 0;
-                    }
-                </style>
-            </head>
-            <body>
-                ${translatedContent
-          .map(
-            (page) => `
-                    <div class="page">
-                        <div class="page-number">Trang ${page.pageNum}</div>
-                        <div class="content">
-                            <h3>Bản gốc:</h3>
-                            <div class="original">${page.original}</div>
-                            <h3>Bản dịch:</h3>
-                            <div class="translated">${page.translated}</div>
-                        </div>
-                    </div>
-                `
-          )
-          .join("")}
-            </body>
-            </html>
-        `;
-      return new Blob([htmlContent], { type: "text/html" });
+    formatTranslationContent(content) {
+      if (!content) return '';
+      return content
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;')
+        .replace(/\n/g, '<br>');
     }
     groupIntoParagraphs(textItems) {
       let paragraphs = [];
@@ -4445,7 +4453,7 @@
         case "translation_only":
           return translatedText;
         case "parallel":
-          return `[GỐC]: ${originalText}  [DỊCH]: ${translatedText}   `;
+          return `[GỐC]: ${originalText}  [DỊCH]: ${translatedText.split("<|>")[2]?.trim() || translatedText}   `;
         case "language_learning":
           let parts = [];
           if (showSource) {
@@ -4685,6 +4693,185 @@
       if (localStorage.getItem("translatorToolsEnabled") === null) {
         localStorage.setItem("translatorToolsEnabled", "true");
       }
+      // CSS tổng hợp cho settings
+      const mode = this.translator.userSettings.settings.theme ? this.translator.userSettings.settings.theme : CONFIG.THEME.mode;
+      const theme = CONFIG.THEME[mode];
+      const isDark = mode === "dark";
+      GM_addStyle(`
+    .translator-settings-container {
+        z-index: 2147483647 !important;
+        position: fixed !important;
+        background: ${theme.background} !important;
+        color: ${theme.text} !important;
+        padding: 20px !important;
+        border-radius: 8px !important;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.3) !important;
+        width: auto !important;
+        min-width: 300px !important;
+        max-width: 90vw !important;
+        max-height: 90vh !important;
+        overflow-y: auto !important;
+        top: 50% !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+    .translator-settings-container * {
+        font-family: Arial, sans-serif !important;
+        box-sizing: border-box !important;
+    }
+    .translator-settings-container input[type="checkbox"],
+    .translator-settings-container input[type="radio"] {
+        appearance: auto !important;
+        -webkit-appearance: auto !important;
+        -moz-appearance: auto !important;
+        position: relative !important;
+        width: 16px !important;
+        height: 16px !important;
+        margin: 3px 5px !important;
+        padding: 0 !important;
+        border: 1px solid ${theme.border} !important;
+        background: ${isDark ? "#202020" : "#eeeeee"} !important;
+        color: ${theme.text} !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        cursor: pointer !important;
+    }
+    .radio-group {
+        display: flex !important;
+        gap: 15px !important;
+        align-items: center !important;
+    }
+    .radio-group label {
+        flex: 1 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 5px !important;
+        gap: 5px !important;
+    }
+    .radio-group input[type="radio"] {
+        margin: 0 !important;
+        position: relative !important;
+        top: 0 !important;
+    }
+    .translator-settings-container input[type="radio"] {
+        border-radius: 50% !important;
+    }
+    .translator-settings-container input[type="checkbox"] {
+        display: flex !important;
+        position: relative !important;
+        transform: translateX(650%) !important;
+        margin: 0 !important;
+        align-items: center !important;
+    }
+    .settings-grid input[type="text"],
+    .settings-grid input[type="number"],
+    .settings-grid select {
+        appearance: auto !important;
+        -webkit-appearance: auto !important;
+        -moz-appearance: auto !important;
+        background: ${isDark ? "#202020" : "#eeeeee"} !important;
+        color: ${theme.text} !important;
+        border: 1px solid ${theme.border} !important;
+        border-radius: 8px !important;
+        padding: 5px 8px !important;
+        margin: 2px !important;
+        font-size: 14px !important;
+        line-height: normal !important;
+        height: auto !important;
+        width: auto !important;
+        min-width: 100px !important;
+        display: inline-block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+    .settings-grid select {
+        padding-right: 20px !important;
+    }
+    .settings-grid label {
+        display: inline-flex !important;
+        align-items: center !important;
+        margin: 2px 0 !important;
+        color: ${theme.text} !important;
+        cursor: pointer !important;
+        user-select: none !important;
+    }
+    .settings-grid input:not([type="hidden"]),
+    .settings-grid select,
+    .settings-grid textarea {
+        display: inline-block !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        position: static !important;
+    }
+    .settings-grid input:disabled,
+    .settings-grid select:disabled {
+        opacity: 0.5 !important;
+        cursor: not-allowed !important;
+    }
+    .translator-settings-container input[type="checkbox"]:hover,
+    .translator-settings-container input[type="radio"]:hover {
+        border-color: ${theme.mode === "dark" ? "#666" : "#333"} !important;
+    }
+    .settings-grid input:focus,
+    .settings-grid select:focus {
+        outline: 2px solid rgba(74, 144, 226, 0.5) !important;
+        outline-offset: 1px !important;
+    }
+    .settings-grid input::before,
+    .settings-grid input::after {
+        content: none !important;
+        display: none !important;
+    }
+    .translator-settings-container button {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 8px !important;
+        line-height: 1 !important;
+    }
+    .remove-key {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 24px !important;
+        height: 24px !important;
+        padding: 0 !important;
+        line-height: 1 !important;
+    }
+    .translator-settings-container::-webkit-scrollbar {
+        width: 8px !important;
+    }
+    .translator-settings-container::-webkit-scrollbar-track {
+        background: ${theme.mode === "dark" ? "#222" : "#eeeeee"} !important;
+        border-radius: 8px !important;
+    }
+    .translator-settings-container::-webkit-scrollbar-thumb {
+        background: ${theme.mode === "dark" ? "#666" : "#888"} !important;
+        border-radius: 8px !important;
+    }
+`);
+      GM_addStyle(`
+    .item-text,
+    .settings-label,
+    .settings-section-title,
+    .translator-settings-container label {
+      color: ${theme.text} !important;
+    }
+    .translator-settings-container input[type="text"],
+    .translator-settings-container input[type="number"],
+    .translator-settings-container select {
+      background: ${isDark ? "#202020" : "#eeeeee"} !important;
+      color: ${theme.text} !important;
+    }
+    /* Đảm bảo input không ghi đè lên label */
+    .translator-settings-container input {
+      color: inherit !important;
+    }
+`);
       // Khởi tạo các managers
       this.mobileOptimizer = new MobileOptimizer(this);
       this.ss = new UserSettings(translator);
@@ -4698,7 +4885,7 @@
       this.handleTranslateButtonClick =
         this.handleTranslateButtonClick.bind(this);
       this.setupClickHandlers = this.setupClickHandlers.bind(this);
-      this.handleTextSelection = this.handleTextSelection.bind(this);
+      this.setupSelectionHandlers = this.setupSelectionHandlers.bind(this);
       this.showTranslatingStatus = this.showTranslatingStatus.bind(this);
       this.removeTranslatingStatus = this.removeTranslatingStatus.bind(this);
       this.resetState = this.resetState.bind(this);
@@ -4710,6 +4897,7 @@
     .processing-spinner {
         width: 30px;
         height: 30px;
+        color: white;
         border: 3px solid rgba(255,255,255,0.3);
         border-radius: 50%;
         border-top-color: white;
@@ -4748,8 +4936,6 @@
       // Gán các listeners
       this.settingsShortcutListener = this.handleSettingsShortcut;
       this.translationShortcutListener = this.handleTranslationShortcuts;
-      this.mouseupButtonListener = this.handleTextSelection;
-      this.selectionButtonListener = this.handleTextSelection;
       // Khởi tạo các trạng thái UI
       this.translationButtonEnabled = true;
       this.translationTapEnabled = true;
@@ -4801,6 +4987,9 @@
           }
         }
       }, 1000);
+      this.debouncedCreateButton = debounce((selection, x, y) => {
+        this.createTranslateButton(selection, x, y);
+      }, 100);
     }
     createCloseButton() {
       const button = document.createElement("span");
@@ -4861,6 +5050,8 @@
         fontSize: settings.fontSize,
       });
       translationDiv.innerHTML = formattedTranslation;
+      const themeMode = this.translator.userSettings.settings.theme ? this.translator.userSettings.settings.theme : CONFIG.THEME.mode;
+      const theme = CONFIG.THEME[themeMode];
       translationDiv.appendChild(this.createCloseButton());
       lastSelectedParagraph.parentNode.appendChild(translationDiv);
       translationDiv.style.cssText = `
@@ -4868,15 +5059,14 @@
         max-width: fit-content; /* Giới hạn chiều rộng */
         width: auto; /* Để nó co giãn theo nội dung */
         min-width: 150px;
-        background: rgba(242, 240, 235, 0.6);
-        color: black;
-        padding: 8px 20px 8px 8px; /* Tăng padding bên phải để tránh nút x đè lên chữ */
+        color: ${theme.text} !important;
+        background-color: ${theme.background} !important;
+        padding: 10px 20px 10px 10px;
+        margin-top: 10px;
         border-radius: 8px;
-        font-size: 16px;
-        margin-top: 5px;
         position: relative;
-        z-index: 2147483646 !important;
-        border: 1px solid rgba(242, 240, 235, 0.2);
+        z-index: 2147483647 !important;
+        border: 1px solid ${theme.border} !important;
         white-space: normal; /* Cho phép xuống dòng nếu quá dài */
         overflow-wrap: break-word; /* Ngắt từ nếu quá dài */
       `;
@@ -4891,12 +5081,11 @@
       const mode =
         this.translator.userSettings.settings.theme ? this.translator.userSettings.settings.theme : CONFIG.THEME.mode;
       const theme = CONFIG.THEME[mode];
+      const isDark = mode === "dark";
       const displayOptions =
         this.translator.userSettings.settings.displayOptions;
       const popup = document.createElement("div");
       popup.classList.add("draggable");
-      const dragHandleBackground =
-        theme.mode === "dark" ? "#1a1a1a" : "#2c3e50";
       const popupStyle = {
         ...CONFIG.STYLES.popup,
         backgroundColor: theme.background,
@@ -4914,7 +5103,7 @@
       const dragHandle = document.createElement("div");
       Object.assign(dragHandle.style, {
         ...CONFIG.STYLES.dragHandle,
-        backgroundColor: dragHandleBackground,
+        backgroundColor: "#2c3e50",
         borderColor: "transparent",
         color: "#ffffff",
         padding: "12px 15px",
@@ -4974,20 +5163,20 @@
       width: 8px;
     }
     .translator-content::-webkit-scrollbar-track {
-      background: ${theme.background === "#333333" ? "#222222" : "#f1f1f1"};
-      border-radius: 4px;
+      background: ${isDark ? "#202020" : "#eeeeee"};
+      border-radius: 8px;
     }
     .translator-content::-webkit-scrollbar-thumb {
-      background: ${theme.background === "#333333" ? "#666" : "#888"};
-      border-radius: 4px;
+      background: ${isDark ? "#666" : "#888"};
+      border-radius: 8px;
     }
     .translator-content::-webkit-scrollbar-thumb:hover {
-      background: ${theme.background === "#333333" ? "#888" : "#555"};
+      background: ${isDark ? "#888" : "#555"};
     }
   `;
       document.head.appendChild(scrollbarStyle);
       contentContainer.classList.add("translator-content");
-      const cleanedText = translatedText.replace(/(\*\*)(.*?)\1/g, "<b>$2</b>");
+      const cleanedText = translatedText.replace(/(\*\*)(.*?)\1/g, `<b style="color: ${theme.text};">$2</b>`);
       const textContainer = document.createElement("div");
       Object.assign(textContainer.style, {
         display: "flex",
@@ -5002,15 +5191,14 @@
         Object.assign(originalContainer.style, {
           color: theme.content,
           padding: "10px 15px",
-          backgroundColor: `${theme.background === "#333333" ? "#222222" : "#f5f5f5"
-            }`,
+          backgroundColor: `${isDark ? "#202020" : "#eeeeee"}`,
           borderRadius: "8px",
           border: `1px solid ${theme.border}`,
           wordBreak: "break-word",
         });
         originalContainer.innerHTML = `
       <div style="font-weight: 500; margin-bottom: 5px; color: ${theme.title};">Bản gốc:</div>
-      <div style="line-height: 1.5;">&nbsp;&nbsp;&nbsp;&nbsp; ${originalText}</div>
+      <div style="line-height: 1.5; color: ${theme.content};">&nbsp;&nbsp;&nbsp;&nbsp; ${originalText}</div>
     `;
         textContainer.appendChild(originalContainer);
       }
@@ -5022,7 +5210,7 @@
         Object.assign(originalContainer.style, {
           color: theme.content,
           padding: "10px 15px",
-          backgroundColor: `${theme.background === "#333333" ? "#222222" : "#f5f5f5"
+          backgroundColor: `${isDark ? "#202020" : "#eeeeee"
             }`,
           borderRadius: "8px",
           border: `1px solid ${theme.border}`,
@@ -5030,7 +5218,7 @@
         });
         originalContainer.innerHTML = `
       <div style="font-weight: 500; margin-bottom: 5px; color: ${theme.title};">Bản gốc:</div>
-      <div style="line-height: 1.5;">&nbsp;&nbsp;&nbsp;&nbsp; ${originalText}</div>
+      <div style="line-height: 1.5; color: ${theme.content};">&nbsp;&nbsp;&nbsp;&nbsp; ${originalText}</div>
     `;
         textContainer.appendChild(originalContainer);
       }
@@ -5042,7 +5230,7 @@
         Object.assign(pinyinContainer.style, {
           color: theme.content,
           padding: "10px 15px",
-          backgroundColor: `${theme.background === "#333333" ? "#222222" : "#f5f5f5"
+          backgroundColor: `${isDark ? "#202020" : "#eeeeee"
             }`,
           borderRadius: "8px",
           border: `1px solid ${theme.border}`,
@@ -5050,7 +5238,7 @@
         });
         pinyinContainer.innerHTML = `
       <div style="font-weight: 500; margin-bottom: 5px; color: ${theme.title};">Pinyin:</div>
-      <div style="line-height: 1.5;">&nbsp;&nbsp;&nbsp;&nbsp; ${pinyin}</div>
+      <div style="line-height: 1.5; color: ${theme.content};">&nbsp;&nbsp;&nbsp;&nbsp; ${pinyin}</div>
     `;
         textContainer.appendChild(pinyinContainer);
       }
@@ -5058,7 +5246,7 @@
       Object.assign(translationContainer.style, {
         color: theme.content,
         padding: "10px 15px",
-        backgroundColor: `${theme.background === "#333333" ? "#222222" : "#f5f5f5"}`,
+        backgroundColor: `${isDark ? "#202020" : "#eeeeee"}`,
         borderRadius: "8px",
         border: `1px solid ${theme.border}`,
         wordBreak: "break-word",
@@ -5066,7 +5254,7 @@
       translationContainer.innerHTML = `
     <div style="font-weight: 500; margin-bottom: 5px; color: ${theme.title
         };">Bản dịch:</div>
-    <div style="line-height: 1.5;">${this.formatTranslation(cleanedText)}</div>
+    <div style="line-height: 1.5; color: ${theme.content};">${this.formatTranslation(cleanedText, theme)}</div>
   `;
       textContainer.appendChild(translationContainer);
       contentContainer.appendChild(textContainer);
@@ -5108,55 +5296,91 @@
         document.onmousemove = null;
       }
     }
-    formatTranslation(text) {
+    formatTranslation(text, theme) {
       return text
         .split("<br>")
         .map((line) => {
-          if (line.startsWith("<b>KEYWORD</b>:")) {
-            return `<h4 style="margin-bottom: 5px;">${line}</h4>`;
+          if (line.startsWith(`<b style="color: ${theme.text};">KEYWORD</b>:`)) {
+            return `<h4 style="margin-bottom: 5px; color: ${theme.text};">${line}</h4>`;
           }
-          return `<p style="margin-left: 20px; margin-bottom: 10px; white-space: pre-wrap; word-wrap: break-word; text-align: justify;">${line}</p>`;
+          return `<p style="margin-left: 20px; margin-bottom: 10px; white-space: pre-wrap; word-wrap: break-word; text-align: justify; color: ${theme.content};">${line}</p>`;
         })
         .join("");
     }
-    handleTextSelection = debounce(() => {
+    setupSelectionHandlers() {
       if (this.isTranslating) return;
       if (this.ignoreNextSelectionChange || this.isTranslating) {
         this.ignoreNextSelectionChange = false;
         return;
       }
       if (!this.translationButtonEnabled) return;
-      const selection = window.getSelection();
-      if (!selection) return;
-      const selectedText = selection.toString().trim();
-      if (!selectedText || !selection.rangeCount) {
-        this.removeTranslateButton();
-        return;
-      }
-      if (!this.currentTranslateButton) {
-        this.createTranslateButton(selection);
-      }
-    }, 100);
-    createTranslateButton(selection) {
-      if (!selection || selection.rangeCount === 0) return;
-      if (this.currentTranslateButton) {
-        this.currentTranslateButton.remove();
-      }
+      document.addEventListener('mousedown', (e) => {
+        if (!e.target.classList.contains('translator-button')) {
+          this.isSelecting = true;
+          this.removeTranslateButton();
+        }
+      });
+      document.addEventListener('mousemove', (e) => {
+        if (this.isSelecting) {
+          const selection = window.getSelection();
+          const selectedText = selection.toString().trim();
+          if (selectedText) {
+            this.removeTranslateButton();
+            this.debouncedCreateButton(selection, e.clientX, e.clientY);
+          }
+        }
+      });
+      document.addEventListener('mouseup', (e) => {
+        if (!e.target.classList.contains('translator-button')) {
+          const selection = window.getSelection();
+          const selectedText = selection.toString().trim();
+          if (selectedText) {
+            this.removeTranslateButton();
+            this.createTranslateButton(selection, e.clientX, e.clientY);
+          }
+        }
+        this.isSelecting = false;
+      });
+      document.addEventListener('touchend', (e) => {
+        if (!e.target.classList.contains('translator-button')) {
+          const selection = window.getSelection();
+          const selectedText = selection.toString().trim();
+          if (selectedText && e.changedTouches?.[0]) {
+            const touch = e.changedTouches[0];
+            this.removeTranslateButton();
+            this.createTranslateButton(selection, touch.clientX, touch.clientY);
+          }
+        }
+      });
+    }
+    createTranslateButton(selection, x, y) {
+      const button = document.createElement('button');
+      button.className = 'translator-button';
+      button.textContent = 'Dịch';
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      const buttonWidth = 60;
+      const buttonHeight = 30;
+      const padding = 10;
+      let left = Math.min(x + padding, viewportWidth - buttonWidth - padding);
+      let top = Math.min(y + 30, viewportHeight - buttonHeight - 30);
+      left = Math.max(padding, left);
+      top = Math.max(30, top);
       const mode =
         this.translator.userSettings.settings.theme ? this.translator.userSettings.settings.theme : CONFIG.THEME.mode;
       const theme = CONFIG.THEME[mode];
-      const button = document.createElement("button");
-      button.textContent = "Dịch";
       Object.assign(button.style, {
         ...CONFIG.STYLES.button,
         backgroundColor: theme.button.translate.background,
         color: theme.button.translate.text,
+        position: 'fixed',
+        left: `${left}px`,
+        top: `${top}px`,
+        zIndex: '2147483647',
+        userSelect: 'none'
       });
-      const rect = selection.getRangeAt(0).getBoundingClientRect();
-      button.style.top = `${rect.bottom + 20}px`;
-      button.style.left = `${rect.left}px`;
-      document.body.appendChild(button);
       this.currentTranslateButton = button;
+      document.body.appendChild(button);
       this.setupClickHandlers(selection);
     }
     handleTranslateButtonClick = async (selection, translateType) => {
@@ -5202,7 +5426,7 @@
           const newSelection = window.getSelection();
           if (newSelection.toString().trim()) {
             this.resetState();
-            this.handleTextSelection(newSelection);
+            this.setupSelectionHandlers();
           }
         } else {
           this.resetState();
@@ -5256,8 +5480,8 @@
       const status = document.createElement("div");
       status.className = "center-translate-status";
       status.innerHTML = `
-      <div class="spinner"></div>
-      <span>Đang dịch...</span>
+      <div class="spinner" style="color: white"></div>
+      <span style="color: white">Đang dịch...</span>
     `;
       document.body.appendChild(status);
       this.translatingStatus = status;
@@ -5431,7 +5655,6 @@
         settings.showTranslatorTools.enabled = newState;
         this.translator.userSettings.saveSettings();
         this.removeToolsContainer();
-        this.removeAllProcessingIndicators();
         this.resetState();
         const overlays = document.querySelectorAll(".translator-overlay");
         overlays.forEach((overlay) => overlay.remove());
@@ -5523,12 +5746,12 @@
         position: fixed;
         bottom: 20px;
         left: 20px;
-        z-index: 2147483646 !important;
+        z-index: 2147483647 !important;
         padding: 8px 16px;
         background-color: #4CAF50;
         color: white;
         border: none;
-        border-radius: 4px;
+        border-radius: 8px;
         cursor: pointer;
         font-size: 14px;
         box-shadow: 0 2px 5px rgba(0,0,0,0.2);
@@ -5637,8 +5860,8 @@
       container.style.cssText = `
     position: fixed !important;
     bottom: 40px;
-    right: 20px;
-    z-index: 2147483646 !important;
+    right: 25px;
+    z-index: 2147483647 !important;
     display: block !important;
     visibility: visible !important;
     opacity: 1 !important;
@@ -5688,7 +5911,6 @@
       mainButton.className = "translator-tools-button";
       mainButton.innerHTML = `
         <span class="tools-icon">⚙️</span>
-        <span class="tools-text">Tools Dịch</span>
     `;
       const dropdown = document.createElement("div");
       dropdown.className = "translator-tools-dropdown";
@@ -5883,29 +6105,19 @@
       container.appendChild(mediaInput);
       document.body.appendChild(container);
       GM_addStyle(`
-  .translator-tools-container {
-    position: fixed !important;
-    bottom: 40px;
-    right: 20px;
-    z-index: 2147483646 !important;
-    font-family: Arial, sans-serif !important;
-    display: flex !important;
-    align-items: center !important;
-  }
   .translator-tools-button {
     display: flex;
     align-items: center;
     gap: 8px;
     padding: 12px 20px;
     border: none;
-    border-radius: 10px;
+    border-radius: 8px;
     background: #4a90e2;
     color: white;
     cursor: pointer;
     transition: all 0.3s ease;
     box-shadow: 0 2px 10px rgba(0,0,0,0.2);
     font-size: 15px;
-    min-width: 100px;
   }
   .translator-tools-button:hover {
     transform: translateY(-2px);
@@ -5922,10 +6134,10 @@
     right: 0;
     margin-bottom: 10px;
     background: white;
-    border-radius: 10px;
+    border-radius: 8px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     padding: 5px;
-    min-width: 100px;
+    min-width: 185px;
   }
   .translator-tools-item {
     display: flex;
@@ -5953,7 +6165,7 @@
     width: 100%;
     height: 100%;
     background: rgba(0,0,0,0.3);
-    z-index: 2147483645 !important;
+    z-index: 2147483647 !important;
     cursor: crosshair;
   }
   .translator-guide {
@@ -5964,9 +6176,9 @@
     background: rgba(0,0,0,0.8);
     color: white;
     padding: 10px 20px;
-    border-radius: 5px;
+    border-radius: 8px;
     font-size: 14px;
-    z-index: 2147483646 !important;
+    z-index: 2147483647 !important;
   }
   .translator-cancel {
     position: fixed;
@@ -5983,24 +6195,12 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 2147483646 !important;
+    z-index: 2147483647 !important;
     transition: all 0.3s ease;
   }
   .translator-cancel:hover {
     background: #ff0000;
     transform: scale(1.1);
-  }
-  .translator-processing-indicator {
-    position: fixed;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(0,0,0,0.8);
-    color: white;
-    padding: 8px 16px;
-    border-radius: 4px;
-    font-size: 14px;
-    z-index: 2147483646 !important;
   }
   /* Dark mode support */
   @media (prefers-color-scheme: dark) {
@@ -6039,39 +6239,20 @@
   .center-translate-status.hidden {
     visibility: hidden !important;
   }
-  .translator-media-highlight {
-    outline: 3px solid #4a90e2 !important;
-    cursor: pointer !important;
-  }
-  .translator-media-processing {
-    position: relative;
-  }
-  .translator-media-processing::after {
-    content: 'Đang xử lý...';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: rgba(0,0,0,0.8);
-    color: white;
-    padding: 8px 16px;
-    border-radius: 4px;
-    font-size: 14px;
-  }
 `);
       if (!document.body.contains(container)) {
         document.body.appendChild(container);
       }
-      container.style.zIndex = "2147483646 !important";
+      container.style.zIndex = "2147483647 !important";
     }
     showProcessingStatus(message) {
       this.removeProcessingStatus();
       const status = document.createElement("div");
       status.className = "processing-status";
       status.innerHTML = `
-            <div class="processing-spinner"></div>
-            <div class="processing-message">${message}</div>
-            <div class="processing-progress">0%</div>
+            <div class="processing-spinner" style="color: white"></div>
+            <div class="processing-message" style="color: white">${message}</div>
+            <div class="processing-progress" style="color: white">0%</div>
         `;
       Object.assign(status.style, {
         position: "fixed",
@@ -6081,7 +6262,7 @@
         background: "rgba(0, 0, 0, 0.8)",
         color: "white",
         padding: "20px",
-        borderRadius: "10px",
+        borderRadius: "8px",
         zIndex: "2147483647 !important",
         textAlign: "center",
         minWidth: "200px",
@@ -6126,13 +6307,13 @@
             background: rgba(0, 0, 0, 0.8);
             color: white;
             padding: 20px;
-            border-radius: 10px;
-            z-index: 2147483644 !important;
+            border-radius: 8px;
+            z-index: 2147483647 !important;
         `;
       loading.innerHTML = `
             <div style="text-align: center;">
-                <div class="spinner"></div>
-                <div>${message}</div>
+                <div class="spinner" style="color: white"></div>
+                <div style="color: white">${message}</div>
             </div>
         `;
       document.body.appendChild(loading);
@@ -6146,9 +6327,9 @@
       if (loading) {
         loading.innerHTML = `
                 <div style="text-align: center;">
-                    <div class="spinner"></div>
-                    <div>${message}</div>
-                    <div>${percent}%</div>
+                    <div class="spinner" style="color: white"></div>
+                    <div style="color: white">${message}</div>
+                    <div style="color: white">${percent}%</div>
                 </div>
             `;
       }
@@ -6164,7 +6345,7 @@
       width: 100% !important;
       height: 100% !important;
       background: rgba(0,0,0,0.3) !important;
-      z-index: 2147483646 !important;
+      z-index: 2147483647 !important;
       pointer-events: none !important;
     }
     .translator-guide {
@@ -6175,7 +6356,7 @@
       background: rgba(0,0,0,0.8) !important;
       color: white !important;
       padding: 10px 20px !important;
-      border-radius: 5px !important;
+      border-radius: 8px !important;
       font-size: 14px !important;
       z-index: 2147483647 !important;
       pointer-events: none !important;
@@ -6205,7 +6386,7 @@
       outline: 3px solid #4a90e2 !important;
       cursor: pointer !important;
       position: relative !important;
-      z-index: 2147483646 !important;
+      z-index: 2147483647 !important;
     }
   `;
       document.head.appendChild(style);
@@ -6302,7 +6483,7 @@
       width: 100%;
       height: 100%;
       background: rgba(0,0,0,0.3);
-      z-index: 2147483646 !important;
+      z-index: 2147483647 !important;
       pointer-events: none;
       transition: background 0.3s ease;
     }
@@ -6317,7 +6498,7 @@
       background: rgba(0,0,0,0.8);
       color: white;
       padding: 10px 20px;
-      border-radius: 5px;
+      border-radius: 8px;
       font-size: 14px;
       z-index: 2147483647 !important;
     }
@@ -6340,13 +6521,13 @@
       top: 0;
       left: 0;
       pointer-events: none;
-      z-index: 2147483646 !important;
+      z-index: 2147483647 !important;
     }
     .manga-translation-overlay {
       position: absolute;
       background: rgba(255, 255, 255, 0.95);
       padding: 4px 8px;
-      border-radius: 4px;
+      border-radius: 8px;
       pointer-events: none;
       text-align: center;
       word-break: break-word;
@@ -6505,6 +6686,7 @@
                 const padding = 2;
                 const mode =
                   this.translator.userSettings.settings.theme ? this.translator.userSettings.settings.theme : CONFIG.THEME.mode;
+                const theme = CONFIG.THEME[mode];
                 Object.assign(overlay.style, {
                   position: "fixed",
                   left: `${pos.x}px`,
@@ -6514,10 +6696,10 @@
                   maxWidth: `${pos.width * 1.4 - padding * 2}px`,
                   height: "auto",
                   // maxHeight: `${pos.height * 2}px`,
-                  background: `${CONFIG.THEME[mode].background}`,
-                  color: `${CONFIG.THEME[mode].text}`,
+                  background: `${theme.background}`,
+                  color: `${theme.text}`,
                   padding: `${padding * 2}px ${padding * 4}px`,
-                  borderRadius: "2px",
+                  borderRadius: "8px",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -6527,7 +6709,7 @@
                   // overflowWrap: "normal",
                   lineHeight: "1.2",
                   pointerEvents: "none",
-                  zIndex: "2147483646 !important",
+                  zIndex: "2147483647 !important",
                   fontSize:
                     this.translator.userSettings.settings.displayOptions
                       .webImageTranslation.fontSize || "9px",
@@ -6565,7 +6747,7 @@
   width: 100%;
   height: 100%;
   pointer-events: none;
-  z-index: 2147483646 !important;
+  z-index: 2147483647 !important;
 `;
               document.head.appendChild(style);
             }
@@ -6775,7 +6957,7 @@ Return ONLY a JSON object like:
       };
     }
     setupContextMenu() {
-      if (!this.translator.userSettings.settings.contextMenu) return;
+      if (!this.translator.userSettings.settings.contextMenu?.enabled) return;
       document.addEventListener("contextmenu", (e) => {
         const selection = window.getSelection();
         const selectedText = selection.toString().trim();
@@ -6877,11 +7059,12 @@ Return ONLY a JSON object like:
       });
       const mode =
         this.translator.userSettings.settings.theme ? this.translator.userSettings.settings.theme : CONFIG.THEME.mode;
+      const theme = CONFIG.THEME[mode];
       GM_addStyle(`
         .translator-context-menu {
           position: fixed;
-          background: ${CONFIG.THEME[mode].background};
-          border: 1px solid ${CONFIG.THEME[mode].border};
+          background: ${theme.background};
+          border: 1px solid ${theme.border};
           border-radius: 8px;
           padding: 5px 0;
           min-width: 150px;
@@ -6907,7 +7090,7 @@ Return ONLY a JSON object like:
         .translator-context-menu-item {
           padding: 8px 15px;
           cursor: pointer;
-          color: ${CONFIG.THEME[mode].text};
+          color: ${theme.text};
           transition: all 0.2s ease;
           display: flex;
           align-items: center;
@@ -6915,8 +7098,8 @@ Return ONLY a JSON object like:
           white-space: nowrap;
         }
         .translator-context-menu-item:hover {
-          background: ${CONFIG.THEME[mode].button.translate.background};
-          color: ${CONFIG.THEME[mode].button.translate.text};
+          background: ${theme.button.translate.background};
+          color: ${theme.button.translate.text};
         }
         .translator-context-menu-item:active {
           transform: scale(0.98);
@@ -7008,19 +7191,7 @@ Return ONLY a JSON object like:
       }
     }
     updateSelectionListeners(enabled) {
-      if (enabled) {
-        document.addEventListener("mouseup", this.mouseupButtonListener);
-        document.addEventListener(
-          "selectionchange",
-          this.selectionButtonListener
-        );
-      } else {
-        document.removeEventListener("mouseup", this.mouseupButtonListener);
-        document.removeEventListener(
-          "selectionchange",
-          this.selectionButtonListener
-        );
-      }
+      if (enabled) this.setupSelectionHandlers();
     }
     updateTapListeners(enabled) {
       if (enabled) this.setupDocumentTapHandler();
@@ -7029,7 +7200,7 @@ Return ONLY a JSON object like:
       const shortcuts = this.translator.userSettings.settings.shortcuts;
       const clickOptions = this.translator.userSettings.settings.clickOptions;
       const touchOptions = this.translator.userSettings.settings.touchOptions;
-      if (this.translator.userSettings.settings.contextMenu) {
+      if (this.translator.userSettings.settings.contextMenu?.enabled) {
         this.setupContextMenu();
       }
       if (shortcuts?.settingsEnabled) {
@@ -7118,7 +7289,7 @@ Return ONLY a JSON object like:
         backgroundColor,
         color: textColor,
         padding: "10px 20px",
-        borderRadius: "5px",
+        borderRadius: "8px",
         zIndex: "2147483647 !important",
         animation: "fadeInOut 2s ease",
         fontFamily: "Arial, sans-serif",
@@ -7152,16 +7323,6 @@ Return ONLY a JSON object like:
         this.translatingStatus.remove();
         this.translatingStatus = null;
       }
-    }
-    removeAllProcessingIndicators() {
-      const indicators = document.querySelectorAll(
-        ".translator-processing-indicator"
-      );
-      indicators.forEach((indicator) => {
-        if (indicator && indicator.parentNode) {
-          indicator.parentNode.removeChild(indicator);
-        }
-      });
     }
   }
   class Translator {
@@ -7332,8 +7493,8 @@ Return ONLY a JSON object like:
       - Tham khảo các trang web sau để lấy văn phong phù hợp cho các đoạn hội thoại liên quan đến sex: [https://truyensex.moe/, https://truyensexvn.org/, https://truyensex.vip/, https://truyensextv69.com/].
   Lưu ý:
     - Những từ tên riêng, địa điểm thì hãy dịch theo nghĩa Hán Việt ví dụ như: Diệp Trần, Lục Thiếu Du, Long kiếm, Long Sĩ Đầu, Thiên kiếp, ngõ Nê Bình, ... thì giữ theo nghĩa Hán Việt sẽ hay hơn là dịch hẳn sang ngôn ngữ có mã ngôn ngữ là '${targetLanguage}'.`;
-      const base_normal = `Cho bạn đoạn văn bản: '${text}'.
-    Hãy dịch đoạn văn bản trên sang ngôn ngữ có mã ngôn ngữ là '${targetLanguage}' với các yêu cầu sau:
+      const base_normal = `Cho bạn văn bản cần xử lý: "${text}"
+    Hãy dịch văn bản cần xử lý trên sang ngôn ngữ có mã ngôn ngữ là '${targetLanguage}' với các yêu cầu sau:
       - Dịch phải tuân thủ chặt chẽ bối cảnh và sắc thái ban đầu của văn bản.
       - Đảm bảo sự lưu loát và tự nhiên như người bản xứ.
       - Không thêm bất kỳ giải thích hay diễn giải nào ngoài bản dịch.
@@ -7369,7 +7530,7 @@ Return ONLY a JSON object like:
       const pinyinPrompts = {
         normal: `Hãy trả về theo format sau, mỗi phần cách nhau bằng dấu <|> và không có giải thích thêm:
     Văn bản gốc <|> pinyin có số tone (1-4) <|> bản dịch sang ngôn ngữ có mã ngôn ngữ là '${targetLanguage}'
-    Văn bản cần xử lý: '${text}'
+    Văn bản cần xử lý: "${text}"
   Lưu ý:
     - Nếu có từ không phải là tiếng Trung, hãy trả về giá trị pinyin của từ đó là phiên âm của từ đó và theo ngôn ngữ đó (Nếu là tiếng Anh thì hay theo phiên âm của US). Ví dụ: Hello <|> /heˈloʊ/ <|> Xin chào
     - Bản dịch phải hoàn toàn bằng ngôn ngữ có mã ngôn ngữ là '${targetLanguage}', nhưng trừ những từ Hán Việt như Long kiếm, Thiên kiếp,... thì giữ nguyên sẽ hay hơn là dịch hẳn sang ngôn ngữ có mã ngôn ngữ là '${targetLanguage}'.
