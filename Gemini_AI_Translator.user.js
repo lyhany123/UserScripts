@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Gemini AI Translator (Inline & Popup)
 // @namespace    Gemini AI Translator (Inline & Popup)
-// @version      4.2
+// @version      4.2.1
 // @author       King1x32
 // @icon         https://raw.githubusercontent.com/king1x32/UserScripts/refs/heads/main/kings.jpg
 // @description  Dịch văn bản (bôi đen văn bản, khi nhập văn bản), hình ảnh, audio, video bằng Google Gemini API. Hỗ trợ popup phân tích từ vựng, popup dịch và dịch nhanh.
@@ -243,12 +243,13 @@
         position: "relative",
         fontFamily: "SF Pro Rounded, sans-serif",
         fontSize: "16px",
+        zIndex: "2147483647",
       },
       popup: {
         position: "fixed",
         border: "1px solid",
         padding: "20px",
-        zIndex: "2147483647 !important",
+        zIndex: "2147483647",
         maxWidth: "90vw",
         minWidth: "300px",
         maxHeight: "80vh",
@@ -269,7 +270,7 @@
         borderRadius: "8px",
         padding: "5px 10px",
         cursor: "pointer",
-        zIndex: "2147483647 !important",
+        zIndex: "2147483647",
         fontSize: "14px",
       },
       dragHandle: {
@@ -282,6 +283,7 @@
         alignItems: "center",
         borderTopLeftRadius: "15px",
         borderTopRightRadius: "15px",
+        zIndex: "2147483647",
       },
     },
   };
@@ -596,7 +598,7 @@
         font-size: 14px !important;
       }
       .translator-tools-dropdown {
-        min-width: 165px !important;
+        min-width: 185px !important;
         max-height: 60vh !important;
         overflow-y: auto !important;
       }
@@ -649,34 +651,15 @@
       }
       this.isSettingsUIOpen = true;
       const container = document.createElement("div");
+      const mode =
+        this.settings.theme ? this.settings.theme : CONFIG.THEME.mode;
+      const theme = CONFIG.THEME[mode];
       const isDark = this.settings.theme === "dark";
       const geminiModels = {
         fast: CONFIG.API.providers.gemini.models.fast || [],
         pro: CONFIG.API.providers.gemini.models.pro || [],
         vision: CONFIG.API.providers.gemini.models.vision || [],
       };
-      container.style.cssText = `
-        all: initial;
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: ${isDark ? "#333333" : "#f5f5f5"};
-        color: ${isDark ? "#ddd" : "#333"};
-        padding: 20px;
-        border-radius: 8px;
-        z-index: 2147483647 !important;
-        width: auto;
-        max-width: 90vw;
-        min-width: 400px;
-        max-height: 80vh;
-        overflow-y: auto;
-        box-shadow: 0 0 10px rgba(0,0,0,0.5);
-        font-family: Arial, sans-serif !important;
-        font-size: 14px !important;
-        line-height: 1.4 !important;
-        box-sizing: border-box !important;
-    `;
       const resetStyle = `
         * {
             all: revert;
@@ -687,7 +670,7 @@
         }
         .settings-grid {
             display: grid !important;
-            grid-template-columns: 160px auto !important;
+            grid-template-columns: 47% 53% !important;
             align-items: center !important;
             gap: 10px !important;
             margin-bottom: 8px !important;
@@ -709,31 +692,18 @@
             justify-content: center !important;
             margin-bottom: 15px;
             font-weight: bold;
-            color: ${isDark ? "#678" : "#333"};
+            color: ${theme.title} !important;
             grid-column: 1 / -1 !important;
         }
         h3 {
             font-family: Arial, sans-serif !important;
             margin-bottom: 15px;
             font-weight: bold;
-            color: ${isDark ? "#678" : "#333"};
+            color: ${theme.title} !important;
             grid-column: 1 / -1 !important;
         }
-        input[type="text"],
-        input[type="number"],
-        select {
-            font-family: Arial, sans-serif !important;
-            font-size: 14px !important;
-            padding: 5px !important;
-            margin: 5px 5px 5px 5px;
-            border-radius: 8px !important;
-            border: 1px solid ${isDark ? "#666" : "#bbb"} !important;
-            background: ${isDark ? "#444" : "#ddd"} !important;
-            color: ${isDark ? "#ddd" : "#000"} !important;
-            width: auto;
-            min-width: 100px;
-            max-width: auto;
-            height: auto !important;
+        h4 {
+            color: ${theme.title} !important;
         }
         input[type="radio"],
         input[type="checkbox"] {
@@ -744,13 +714,17 @@
             width: calc(100% - 13px) !important;
             min-width: calc(100% - 13px) !important;
             max-width: calc(100% - 13px) !important;
-            margin-left: 5px !important;
             box-sizing: border-box !important;
+        }
+        #apiKey input[type="text"] {
+            padding: 0px 5px !important;
+            -webkit-appearance: auto !important;
+            -moz-appearance: auto !important;
         }
         button {
             font-family: Arial, sans-serif !important;
             font-size: 14px !important;
-            background: ${isDark ? "#444" : "#ddd"};
+            background-color: ${isDark ? "#444" : "#ddd"};
             color: ${isDark ? "#ddd" : "#000"} !important;
             padding: 5px 15px !important;
             border-radius: 8px !important;
@@ -759,7 +733,7 @@
             margin: 5px !important;
         }
         #cancelSettings {
-            background: ${isDark ? "#666" : "#ddd"} !important;
+            background-color: ${isDark ? "#666" : "#ddd"} !important;
             color: ${isDark ? "#ddd" : "#000"} !important;
             padding: 5px 15px !important;
             border-radius: 8px !important;
@@ -768,10 +742,10 @@
             margin: 5px !important;
         }
         #cancelSettings:hover {
-            background: ${isDark ? "#888" : "#aaa"} !important;
+            background-color: ${isDark ? "#888" : "#aaa"} !important;
         }
         #saveSettings {
-            background: #007BFF !important;
+            background-color: #007BFF !important;
             padding: 5px 15px !important;
             border-radius: 8px !important;
             cursor: pointer !important;
@@ -779,7 +753,7 @@
             margin: 5px !important;
         }
         #saveSettings:hover {
-            background: #009ddd !important;
+            background-color: #009ddd !important;
         }
         button {
           font-family: Arial, sans-serif !important;
@@ -799,16 +773,16 @@
           transform: translateY(0) !important;
         }
         #exportSettings:hover {
-          background: #218838 !important;
+          background-color: #218838 !important;
         }
         #importSettings:hover {
-          background: #138496 !important;
+          background-color: #138496 !important;
         }
         #cancelSettings:hover {
-          background: ${isDark ? "#777" : "#dae0e5"} !important;
+          background-color: ${isDark ? "#777" : "#dae0e5"} !important;
         }
         #saveSettings:hover {
-          background: #0056b3 !important;
+          background-color: #0056b3 !important;
         }
         @keyframes buttonPop {
           0% { transform: scale(1); }
@@ -840,7 +814,7 @@
         }
         .shortcut-prefix {
             white-space: nowrap !important;
-            color: ${isDark ? "#aaa" : "#555"} !important;
+            color: ${isDark ? "#aaa" : "#555"};
             font-size: 14px !important;
             min-width: 45px !important;
         }
@@ -854,7 +828,7 @@
           min-height: 100px;
           margin: 5px 0;
           padding: 8px;
-          background: ${isDark ? "#444" : "#fff"};
+          background-color: ${isDark ? "#444" : "#fff"};
           color: ${isDark ? "#fff" : "#000"};
           border: 1px solid ${isDark ? "#666" : "#ccc"};
           border-radius: 8px;
@@ -905,16 +879,16 @@
           .map(
             (key) => `
         <div class="api-key-entry" style="display: flex; gap: 10px; margin-bottom: 5px;">
-          <input type="text" class="gemini-key" value="${key}" style="flex: 1; width: 100%;">
+          <input type="text" class="gemini-key" value="${key}" style="flex: 1; width: 100%; border-radius: 6px !important; margin-left: 5px;">
           <button class="remove-key" data-provider="gemini" data-index="${this.settings.apiKey.gemini.indexOf(
               key
-            )}" style="background: #ff4444;">×</button>
+            )}" style="background-color: #ff4444;">×</button>
         </div>
       `
           )
           .join("")}
     </div>
-    <button id="addGeminiKey" class="settings-label" style="background: #28a745; margin-top: 5px;">+ Add Gemini Key</button>
+    <button id="addGeminiKey" class="settings-label" style="background-color: #28a745; margin-top: 5px;">+ Add Gemini Key</button>
   </div>
   <div id="openaiKeys" style="margin-bottom: 10px;">
     <h4 class="settings-label" style="margin-bottom: 5px;">OpenAI API Keys</h4>
@@ -923,16 +897,16 @@
           .map(
             (key) => `
         <div class="api-key-entry" style="display: flex; gap: 10px; margin-bottom: 5px;">
-          <input type="text" class="openai-key" value="${key}" style="flex: 1; width: 100%;">
+          <input type="text" class="openai-key" value="${key}" style="flex: 1; width: 100%; border-radius: 6px !important; margin-left: 5px;">
           <button class="remove-key" data-provider="openai" data-index="${this.settings.apiKey.openai.indexOf(
               key
-            )}" style="background: #ff4444;">×</button>
+            )}" style="background-color: #ff4444;">×</button>
         </div>
       `
           )
           .join("")}
     </div>
-    <button id="addOpenaiKey" class="settings-label" style="background: #28a745; margin-top: 5px;">+ Add OpenAI Key</button>
+    <button id="addOpenaiKey" class="settings-label" style="background-color: #28a745; margin-top: 5px;">+ Add OpenAI Key</button>
   </div>
 </div>
 <div style="margin-bottom: 15px;">
@@ -1019,7 +993,7 @@
 <div style="margin-bottom: 15px;">
   <h3>TOOLS DỊCH</h3>
   <div class="settings-grid">
-    <span class="settings-label">Hiển thị Tools dịch (PAGE + OCR + MEDIA):</span>
+    <span class="settings-label">Hiển thị Tools ⚙️:</span>
     <input type="checkbox" id="showTranslatorTools"
       ${localStorage.getItem("translatorToolsEnabled") === "true"
           ? "checked"
@@ -1056,7 +1030,7 @@
       <div style="flex: 1;">
         <textarea id="customSelectors"
           style="width: 100%; min-height: 100px; margin: 5px 0; padding: 8px;
-          background: ${isDark ? "#444" : "#fff"};
+          background-color: ${isDark ? "#444" : "#fff"};
           color: ${isDark ? "#fff" : "#000"};
           border: 1px solid ${isDark ? "#666" : "#ccc"};
           border-radius: 8px;
@@ -1075,7 +1049,7 @@
       <div style="flex: 1;">
         <textarea id="defaultSelectors" readonly
           style="width: 100%; min-height: 100px; margin: 5px 0; padding: 8px;
-          background: ${isDark ? "#333" : "#f5f5f5"};
+          background-color: ${isDark ? "#333" : "#f5f5f5"};
           color: ${isDark ? "#999" : "#666"};
           border: 1px solid ${isDark ? "#555" : "#ddd"};
           border-radius: 8px;
@@ -1556,7 +1530,7 @@
   <div class="settings-grid">
       <span class="settings-label">Dịch text trong hộp nhập:</span>
       <div class="shortcut-container">
-          <span class="shortcut-prefix">Command/Alt +</span>
+          <span class="shortcut-prefix">Cmd/Alt &nbsp+</span>
           <input type="text" id="inputTranslationKey" class="shortcut-input settings-input"
               value="${this.settings.inputTranslation?.shortcut?.key || "t"}">
       </div>
@@ -1564,7 +1538,7 @@
   <div class="settings-grid">
     <span class="settings-label">Dịch trang:</span>
     <div class="shortcut-container">
-      <span class="shortcut-prefix">Command/Alt +</span>
+      <span class="shortcut-prefix">Cmd/Alt &nbsp+</span>
       <input type="text" id="pageTranslateKey" class="shortcut-input settings-input"
         value="${this.settings.shortcuts.pageTranslate.key}">
     </div>
@@ -1572,7 +1546,7 @@
   <div class="settings-grid">
     <span class="settings-label">Dịch nhanh:</span>
     <div class="shortcut-container">
-      <span class="shortcut-prefix">Command/Alt +</span>
+      <span class="shortcut-prefix">Cmd/Alt &nbsp+</span>
       <input type="text" id="quickKey" class="shortcut-input settings-input"
         value="${this.settings.shortcuts.quickTranslate.key}">
     </div>
@@ -1580,7 +1554,7 @@
   <div class="settings-grid">
     <span class="settings-label">Dịch popup:</span>
     <div class="shortcut-container">
-      <span class="shortcut-prefix">Command/Alt +</span>
+      <span class="shortcut-prefix">Cmd/Alt &nbsp+</span>
       <input type="text" id="popupKey" class="shortcut-input settings-input"
         value="${this.settings.shortcuts.popupTranslate.key}">
     </div>
@@ -1588,7 +1562,7 @@
   <div class="settings-grid">
     <span class="settings-label">Dịch nâng cao:</span>
     <div class="shortcut-container">
-      <span class="shortcut-prefix">Command/Alt +</span>
+      <span class="shortcut-prefix">Cmd/Alt &nbsp+</span>
       <input type="text" id="advancedKey" class="shortcut-input settings-input" value="${this.settings.shortcuts.advancedTranslate.key
         }">
     </div>
@@ -1729,7 +1703,7 @@
 <div style="margin-bottom: 15px;">
   <h3>CACHE</h3>
   <div style="margin-bottom: 10px;">
-    <h4 style="color: ${isDark ? " #678" : "#333"
+    <h4 style="color: ${isDark ? "#678" : "#333"
         }; margin-bottom: 8px;">Text Cache</h4>
     <div class="settings-grid">
       <span class="settings-label">Bật cache text:</span>
@@ -1748,7 +1722,7 @@
         }" min="60000" step="60000">
     </div>
     <div style="margin-bottom: 10px;">
-      <h4 style="color: ${isDark ? " #678" : "#333"
+      <h4 style="color: ${isDark ? "#678" : "#333"
         }; margin-bottom: 8px;">Image Cache</h4>
       <div class="settings-grid">
         <span class="settings-label">Bật cache ảnh:</span>
@@ -1769,7 +1743,7 @@
       </div>
     </div>
     <div style="margin-bottom: 10px;">
-      <h4 style="color: ${isDark ? " #678" : "#333"
+      <h4 style="color: ${isDark ? "#678" : "#333"
         }; margin-bottom: 8px;">Media Cache</h4>
       <div class="settings-grid">
         <span class="settings-label">Bật cache media:</span>
@@ -1795,7 +1769,7 @@
         }; margin-top: 20px; padding-top: 20px;">
   <h3>SAO LƯU CÀI ĐẶT</h3>
   <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-    <button id="exportSettings" style="flex: 1; background: #28a745 !important; min-width: 140px; height: 36px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+    <button id="exportSettings" style="flex: 1; background-color: #28a745 !important; min-width: 140px; height: 36px; display: flex; align-items: center; justify-content: center; gap: 8px;">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
         <polyline points="7 10 12 15 17 10"/>
@@ -1804,7 +1778,7 @@
       Xuất cài đặt
     </button>
     <input type="file" id="importInput" accept=".json" style="display: none;">
-    <button id="importSettings" style="flex: 1; background: #17a2b8 !important; min-width: 140px; height: 36px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+    <button id="importSettings" style="flex: 1; background-color: #17a2b8 !important; min-width: 140px; height: 36px; display: flex; align-items: center; justify-content: center; gap: 8px;">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
         <polyline points="17 8 12 3 7 8"/>
@@ -1817,11 +1791,11 @@
 <div style="border-top: 1px solid ${isDark ? "#444" : "#ddd"
         }; margin-top: 20px; padding-top: 20px;">
   <div style="display: flex; gap: 10px; justify-content: flex-end;">
-    <button id="cancelSettings" style="min-width: 100px; height: 36px; background: ${isDark ? "#666" : "#e9ecef"
+    <button id="cancelSettings" style="min-width: 100px; height: 36px; background-color: ${isDark ? "#666" : "#e9ecef"
         } !important; color: ${isDark ? "#fff" : "#333"} !important;">
       Hủy
     </button>
-    <button id="saveSettings" style="min-width: 100px; height: 36px; background: #007bff !important; color: white !important;">
+    <button id="saveSettings" style="min-width: 100px; height: 36px; background-color: #007bff !important; color: white !important;">
       Lưu
     </button>
   </div>
@@ -1843,8 +1817,8 @@
           "display: flex; gap: 10px; margin-bottom: 5px;";
         const currentKeysCount = geminiContainer.children.length;
         newEntry.innerHTML = `
-    <input type="text" class="gemini-key" value="" style="flex: 1; width: 100%;">
-    <button class="remove-key" data-provider="gemini" data-index="${currentKeysCount}" style="background: #ff4444;">×</button>
+    <input type="text" class="gemini-key" value="" style="flex: 1; width: 100%; border-radius: 6px !important; margin-left: 5px;">
+    <button class="remove-key" data-provider="gemini" data-index="${currentKeysCount}" style="background-color: #ff4444;">×</button>
   `;
         geminiContainer.appendChild(newEntry);
       });
@@ -1855,8 +1829,8 @@
           "display: flex; gap: 10px; margin-bottom: 5px;";
         const currentKeysCount = openaiContainer.children.length;
         newEntry.innerHTML = `
-    <input type="text" class="openai-key" value="" style="flex: 1; width: 100%;">
-    <button class="remove-key" data-provider="openai" data-index="${currentKeysCount}" style="background: #ff4444;">×</button>
+    <input type="text" class="openai-key" value="" style="flex: 1; width: 100%; border-radius: 6px !important; margin-left: 5px;">
+    <button class="remove-key" data-provider="openai" data-index="${currentKeysCount}" style="background-color: #ff4444;">×</button>
   `;
         openaiContainer.appendChild(newEntry);
       });
@@ -2835,7 +2809,7 @@
             align-items: center;
             z-index: 2147483647 !important;
             pointer-events: auto;
-            background: ${theme.background};
+            background-color: ${theme.background};
             border-radius: 8px;
             padding: 2px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.3);
@@ -2850,7 +2824,7 @@
       button.title = title;
       const theme = this.getCurrentTheme();
       button.style.cssText = `
-            background: transparent;
+            background-color: transparent;
             color: ${theme.text};
             border: none;
             border-radius: 8px;
@@ -2952,7 +2926,7 @@
         this.translator.userSettings.settings.theme ? this.translator.userSettings.settings.theme : CONFIG.THEME.mode;
       const theme = CONFIG.THEME[mode];
       return {
-        background: theme.background,
+        backgroundColor: theme.background,
         text: theme.text,
         border: theme.border,
         hoverBg: theme.background,
@@ -3627,7 +3601,7 @@
                     if (mode === "translation_only") {
                       output = translated;
                     } else if (mode === "parallel") {
-                      output = `[GỐC]: ${text}  [DỊCH]: ${translated}   `;
+                      output = `[GỐC]: ${text}  [DỊCH]: ${translated.split("<|>")[2]?.trim() || translated}   `;
                     } else if (mode === "language_learning") {
                       let sourceHTML = "";
                       if (showSource) {
@@ -4035,7 +4009,7 @@
         .section {
           margin-bottom: 15px;
           padding: 15px;
-          background: #fff;
+          background-color: #fff;
           border: 1px solid #eee;
           border-radius: 8px;
           white-space: pre-wrap;
@@ -4701,13 +4675,13 @@
     .translator-settings-container {
         z-index: 2147483647 !important;
         position: fixed !important;
-        background: ${theme.background} !important;
+        background-color: ${theme.background} !important;
         color: ${theme.text} !important;
         padding: 20px !important;
-        border-radius: 8px !important;
+        border-radius: 10px !important;
         box-shadow: 0 2px 10px rgba(0,0,0,0.3) !important;
         width: auto !important;
-        min-width: 300px !important;
+        min-width: 320px !important;
         max-width: 90vw !important;
         max-height: 90vh !important;
         overflow-y: auto !important;
@@ -4717,6 +4691,8 @@
         display: block !important;
         visibility: visible !important;
         opacity: 1 !important;
+        font-size: 14px !important;
+        line-height: 1.4 !important;
     }
     .translator-settings-container * {
         font-family: Arial, sans-serif !important;
@@ -4732,9 +4708,8 @@
         height: 16px !important;
         margin: 3px 5px !important;
         padding: 0 !important;
+        accent-color: #0000aa !important;
         border: 1px solid ${theme.border} !important;
-        background: ${isDark ? "#202020" : "#eeeeee"} !important;
-        color: ${theme.text} !important;
         opacity: 1 !important;
         visibility: visible !important;
         cursor: pointer !important;
@@ -4763,9 +4738,9 @@
     .translator-settings-container input[type="checkbox"] {
         display: flex !important;
         position: relative !important;
-        transform: translateX(650%) !important;
-        margin: 0 !important;
+        margin: 5px 50% 5px 50% !important;
         align-items: center !important;
+        justify-content: center !important;
     }
     .settings-grid input[type="text"],
     .settings-grid input[type="number"],
@@ -4773,12 +4748,12 @@
         appearance: auto !important;
         -webkit-appearance: auto !important;
         -moz-appearance: auto !important;
-        background: ${isDark ? "#202020" : "#eeeeee"} !important;
+        background-color: ${isDark ? "#202020" : "#eeeeee"} !important;
         color: ${theme.text} !important;
         border: 1px solid ${theme.border} !important;
         border-radius: 8px !important;
         padding: 5px 8px !important;
-        margin: 2px !important;
+        margin: 5px !important;
         font-size: 14px !important;
         line-height: normal !important;
         height: auto !important;
@@ -4794,7 +4769,7 @@
     .settings-grid label {
         display: inline-flex !important;
         align-items: center !important;
-        margin: 2px 0 !important;
+        margin: 3px 10px !important;
         color: ${theme.text} !important;
         cursor: pointer !important;
         user-select: none !important;
@@ -4814,7 +4789,7 @@
     }
     .translator-settings-container input[type="checkbox"]:hover,
     .translator-settings-container input[type="radio"]:hover {
-        border-color: ${theme.mode === "dark" ? "#666" : "#333"} !important;
+        border-color: ${theme.mode === "dark" ? "#777" : "#444"} !important;
     }
     .settings-grid input:focus,
     .settings-grid select:focus {
@@ -4837,6 +4812,7 @@
         display: inline-flex !important;
         align-items: center !important;
         justify-content: center !important;
+        margin-top: 9px !important;
         width: 24px !important;
         height: 24px !important;
         padding: 0 !important;
@@ -4846,25 +4822,102 @@
         width: 8px !important;
     }
     .translator-settings-container::-webkit-scrollbar-track {
-        background: ${theme.mode === "dark" ? "#222" : "#eeeeee"} !important;
+        background-color: ${theme.mode === "dark" ? "#222" : "#eeeeee"} !important;
         border-radius: 8px !important;
     }
     .translator-settings-container::-webkit-scrollbar-thumb {
-        background: ${theme.mode === "dark" ? "#666" : "#888"} !important;
+        background-color: ${theme.mode === "dark" ? "#666" : "#888"} !important;
         border-radius: 8px !important;
     }
 `);
       GM_addStyle(`
-    .item-text,
+  .translator-tools-container {
+    position: fixed !important;
+    bottom: 40px;
+    right: 25px;
+    color: ${theme.text} !important;
+    border-radius: 8px !important;
+    z-index: 2147483647 !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+  .translator-tools-container * {
+    font-family: Arial, sans-serif !important;
+    box-sizing: border-box !important;
+  }
+  .translator-tools-button {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    padding: 12px 20px !important;
+    border: none !important;
+    border-radius: 8px !important;
+    background-color: rgba(74,144,226,0.4) !important;
+    color: white !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2) !important;
+    font-size: 15px !important;
+    line-height: 1 !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+  .translator-tools-dropdown {
+    display: none;
+    position: absolute !important;
+    bottom: 100% !important;
+    right: 0 !important;
+    margin-bottom: 10px !important;
+    background-color: ${theme.background} !important;
+    color: ${theme.text} !important;
+    border-radius: 8px !important;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1) !important;
+    padding: 5px !important;
+    min-width: 200px !important;
+    z-index: 2147483647 !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+  .translator-tools-item {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    padding: 12px 15px !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    border-radius: 8px !important;
+    background-color: ${theme.background} !important;
+    color: ${theme.text} !important;
+    border: 3px solid ${theme.border} !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+  .item-icon, .item-text {
+    font-family: Arial, sans-serif !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+  .item-icon {
+    font-size: 18px !important;
+  }
+  .item-text {
+    font-size: 14px !important;
+  }
+`);
+      GM_addStyle(`
     .settings-label,
     .settings-section-title,
+    .shortcut-prefix,
+    .item-text,
     .translator-settings-container label {
       color: ${theme.text} !important;
+      margin: 2px 10px !important;
     }
     .translator-settings-container input[type="text"],
     .translator-settings-container input[type="number"],
     .translator-settings-container select {
-      background: ${isDark ? "#202020" : "#eeeeee"} !important;
+      background-color: ${isDark ? "#202020" : "#eeeeee"} !important;
       color: ${theme.text} !important;
     }
     /* Đảm bảo input không ghi đè lên label */
@@ -4872,23 +4925,6 @@
       color: inherit !important;
     }
 `);
-      // Khởi tạo các managers
-      this.mobileOptimizer = new MobileOptimizer(this);
-      this.ss = new UserSettings(translator);
-      this.ocr = new OCRManager(translator);
-      this.media = new MediaManager(translator);
-      this.page = new PageTranslator(translator);
-      // Bind các methods
-      this.handleSettingsShortcut = this.handleSettingsShortcut.bind(this);
-      this.handleTranslationShortcuts =
-        this.handleTranslationShortcuts.bind(this);
-      this.handleTranslateButtonClick =
-        this.handleTranslateButtonClick.bind(this);
-      this.setupClickHandlers = this.setupClickHandlers.bind(this);
-      this.setupSelectionHandlers = this.setupSelectionHandlers.bind(this);
-      this.showTranslatingStatus = this.showTranslatingStatus.bind(this);
-      this.removeTranslatingStatus = this.removeTranslatingStatus.bind(this);
-      this.resetState = this.resetState.bind(this);
       GM_addStyle(`
     @keyframes spin {
         0% { transform: rotate(0deg); }
@@ -4918,21 +4954,24 @@
     .translation-div strong {
       font-weight: bold;
     }
-    .translator-settings-container,
-    .translator-tools-container,
-    .translation-div,
-    .draggable,
-    .page-translate-button,
-    .translator-tools-dropdown,
-    .translator-notification,
-    .translator-content,
-    .translator-context-menu,
-    .translator-overlay,
-    .translator-guide,
-    .center-translate-status {
-      z-index: 2147483647 !important;
-    }
     `);
+      // Khởi tạo các managers
+      this.mobileOptimizer = new MobileOptimizer(this);
+      this.ss = new UserSettings(translator);
+      this.ocr = new OCRManager(translator);
+      this.media = new MediaManager(translator);
+      this.page = new PageTranslator(translator);
+      // Bind các methods
+      this.handleSettingsShortcut = this.handleSettingsShortcut.bind(this);
+      this.handleTranslationShortcuts =
+        this.handleTranslationShortcuts.bind(this);
+      this.handleTranslateButtonClick =
+        this.handleTranslateButtonClick.bind(this);
+      this.setupClickHandlers = this.setupClickHandlers.bind(this);
+      this.setupSelectionHandlers = this.setupSelectionHandlers.bind(this);
+      this.showTranslatingStatus = this.showTranslatingStatus.bind(this);
+      this.removeTranslatingStatus = this.removeTranslatingStatus.bind(this);
+      this.resetState = this.resetState.bind(this);
       // Gán các listeners
       this.settingsShortcutListener = this.handleSettingsShortcut;
       this.translationShortcutListener = this.handleTranslationShortcuts;
@@ -5163,15 +5202,15 @@
       width: 8px;
     }
     .translator-content::-webkit-scrollbar-track {
-      background: ${isDark ? "#202020" : "#eeeeee"};
+      background-color: ${isDark ? "#202020" : "#eeeeee"};
       border-radius: 8px;
     }
     .translator-content::-webkit-scrollbar-thumb {
-      background: ${isDark ? "#666" : "#888"};
+      background-color: ${isDark ? "#666" : "#888"};
       border-radius: 8px;
     }
     .translator-content::-webkit-scrollbar-thumb:hover {
-      background: ${isDark ? "#888" : "#555"};
+      background-color: ${isDark ? "#888" : "#555"};
     }
   `;
       document.head.appendChild(scrollbarStyle);
@@ -5181,7 +5220,8 @@
       Object.assign(textContainer.style, {
         display: "flex",
         flexDirection: "column",
-        gap: "15px",
+        zIndex: "2147483647 !important",
+        gap: "15px"
       });
       if (
         displayOptions.translationMode == "parallel" &&
@@ -5195,6 +5235,7 @@
           borderRadius: "8px",
           border: `1px solid ${theme.border}`,
           wordBreak: "break-word",
+          zIndex: "2147483647 !important",
         });
         originalContainer.innerHTML = `
       <div style="font-weight: 500; margin-bottom: 5px; color: ${theme.title};">Bản gốc:</div>
@@ -5215,6 +5256,7 @@
           borderRadius: "8px",
           border: `1px solid ${theme.border}`,
           wordBreak: "break-word",
+          zIndex: "2147483647 !important",
         });
         originalContainer.innerHTML = `
       <div style="font-weight: 500; margin-bottom: 5px; color: ${theme.title};">Bản gốc:</div>
@@ -5235,6 +5277,7 @@
           borderRadius: "8px",
           border: `1px solid ${theme.border}`,
           wordBreak: "break-word",
+          zIndex: "2147483647 !important",
         });
         pinyinContainer.innerHTML = `
       <div style="font-weight: 500; margin-bottom: 5px; color: ${theme.title};">Pinyin:</div>
@@ -5250,6 +5293,7 @@
         borderRadius: "8px",
         border: `1px solid ${theme.border}`,
         wordBreak: "break-word",
+        zIndex: "2147483647 !important",
       });
       translationContainer.innerHTML = `
     <div style="font-weight: 500; margin-bottom: 5px; color: ${theme.title
@@ -5347,13 +5391,13 @@
           const selectedText = selection.toString().trim();
           if (selectedText && e.changedTouches?.[0]) {
             const touch = e.changedTouches[0];
-            this.removeTranslateButton();
             this.createTranslateButton(selection, touch.clientX, touch.clientY);
           }
         }
       });
     }
     createTranslateButton(selection, x, y) {
+      this.removeTranslateButton();
       const button = document.createElement('button');
       button.className = 'translator-button';
       button.textContent = 'Dịch';
@@ -5379,8 +5423,8 @@
         zIndex: '2147483647',
         userSelect: 'none'
       });
-      this.currentTranslateButton = button;
       document.body.appendChild(button);
+      this.currentTranslateButton = button;
       this.setupClickHandlers(selection);
     }
     handleTranslateButtonClick = async (selection, translateType) => {
@@ -5452,7 +5496,7 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.8);
+            background-color: rgba(0, 0, 0, 0.8);
             color: white;
             padding: 15px 25px;
             border-radius: 8px;
@@ -5857,15 +5901,6 @@
       this.removeToolsContainer();
       const container = document.createElement("div");
       container.className = "translator-tools-container";
-      container.style.cssText = `
-    position: fixed !important;
-    bottom: 40px;
-    right: 25px;
-    z-index: 2147483647 !important;
-    display: block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-  `;
       container.setAttribute("data-permanent", "true");
       container.setAttribute("data-translator-tool", "true");
       this.handleOCRInput = async (e) => {
@@ -6028,7 +6063,7 @@
               const url = URL.createObjectURL(blob);
               const a = document.createElement("a");
               a.href = url;
-              a.download = `translated_${file.name}`;
+              a.download = `king1x32_translated_${file.name}`;
               a.click();
               URL.revokeObjectURL(url);
               this.showNotification("Dịch file HTML thành công", "success");
@@ -6060,7 +6095,7 @@
               const url = URL.createObjectURL(translatedBlob);
               const a = document.createElement("a");
               a.href = url;
-              a.download = `translated_${file.name.replace(".pdf", ".html")}`;
+              a.download = `king1x32_translated_${file.name.replace(".pdf", ".html")}`;
               a.click();
               URL.revokeObjectURL(url);
               this.showNotification("Dịch PDF thành công", "success");
@@ -6105,58 +6140,16 @@
       container.appendChild(mediaInput);
       document.body.appendChild(container);
       GM_addStyle(`
-  .translator-tools-button {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 12px 20px;
-    border: none;
-    border-radius: 8px;
-    background: #4a90e2;
-    color: white;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-    font-size: 15px;
-  }
   .translator-tools-button:hover {
     transform: translateY(-2px);
-    background: #357abd;
+    background-color: #357abd;
   }
   .translator-tools-button:disabled {
     opacity: 0.7;
     cursor: not-allowed;
   }
-  .translator-tools-dropdown {
-    display: none;
-    position: absolute;
-    bottom: 100%;
-    right: 0;
-    margin-bottom: 10px;
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    padding: 5px;
-    min-width: 185px;
-  }
-  .translator-tools-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 12px 15px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    border-radius: 8px;
-    color: #333;
-  }
   .translator-tools-item:hover {
-    background: #f5f5f5;
-  }
-  .item-icon {
-    font-size: 18px;
-  }
-  .item-text {
-    font-size: 14px;
+    background-color: #f5f5f5;
   }
   .translator-overlay {
     position: fixed;
@@ -6164,7 +6157,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0,0,0,0.3);
+    background-color: rgba(0,0,0,0.3);
     z-index: 2147483647 !important;
     cursor: crosshair;
   }
@@ -6173,7 +6166,7 @@
     top: 20px;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(0,0,0,0.8);
+    background-color: rgba(0,0,0,0.8);
     color: white;
     padding: 10px 20px;
     border-radius: 8px;
@@ -6184,7 +6177,7 @@
     position: fixed;
     top: 20px;
     right: 20px;
-    background: #ff4444;
+    background-color: #ff4444;
     color: white;
     border: none;
     border-radius: 50%;
@@ -6199,22 +6192,22 @@
     transition: all 0.3s ease;
   }
   .translator-cancel:hover {
-    background: #ff0000;
+    background-color: #ff0000;
     transform: scale(1.1);
   }
   /* Dark mode support */
   @media (prefers-color-scheme: dark) {
     .translator-tools-dropdown {
-      background: #333;
+      background-color: #333;
     }
     .translator-tools-item {
       color: #fff;
     }
     .translator-tools-item:hover {
-      background: #444;
+      background-color: #444;
     }
     .translator-guide {
-      background: rgba(0,0,0,0.9);
+      background-color: rgba(0,0,0,0.9);
     }
   }
   /* Animation */
@@ -6259,7 +6252,7 @@
         top: "50%",
         left: "50%",
         transform: "translate(-50%, -50%)",
-        background: "rgba(0, 0, 0, 0.8)",
+        backgroundColor: "rgba(0, 0, 0, 0.8)",
         color: "white",
         padding: "20px",
         borderRadius: "8px",
@@ -6304,7 +6297,7 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.8);
+            background-color: rgba(0, 0, 0, 0.8);
             color: white;
             padding: 20px;
             border-radius: 8px;
@@ -6344,7 +6337,7 @@
       left: 0 !important;
       width: 100% !important;
       height: 100% !important;
-      background: rgba(0,0,0,0.3) !important;
+      background-color: rgba(0,0,0,0.3) !important;
       z-index: 2147483647 !important;
       pointer-events: none !important;
     }
@@ -6353,7 +6346,7 @@
       top: 20px !important;
       left: 50% !important;
       transform: translateX(-50%) !important;
-      background: rgba(0,0,0,0.8) !important;
+      background-color: rgba(0,0,0,0.8) !important;
       color: white !important;
       padding: 10px 20px !important;
       border-radius: 8px !important;
@@ -6365,7 +6358,7 @@
       position: fixed !important;
       top: 20px !important;
       right: 20px !important;
-      background: #ff4444 !important;
+      background-color: #ff4444 !important;
       color: white !important;
       border: none !important;
       border-radius: 50% !important;
@@ -6482,20 +6475,20 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0,0,0,0.3);
+      background-color: rgba(0,0,0,0.3);
       z-index: 2147483647 !important;
       pointer-events: none;
       transition: background 0.3s ease;
     }
     .translator-overlay.translating-done {
-      background: transparent;
+      background-color: transparent;
     }
     .translator-guide {
       position: fixed;
       top: 20px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(0,0,0,0.8);
+      background-color: rgba(0,0,0,0.8);
       color: white;
       padding: 10px 20px;
       border-radius: 8px;
@@ -6506,7 +6499,7 @@
       position: fixed;
       top: 20px;
       right: 20px;
-      background: #ff4444;
+      background-color: #ff4444;
       color: white;
       border: none;
       border-radius: 50%;
@@ -6525,7 +6518,7 @@
     }
     .manga-translation-overlay {
       position: absolute;
-      background: rgba(255, 255, 255, 0.95);
+      background-color: rgba(255, 255, 255, 0.95);
       padding: 4px 8px;
       border-radius: 8px;
       pointer-events: none;
@@ -6696,7 +6689,7 @@
                   maxWidth: `${pos.width * 1.4 - padding * 2}px`,
                   height: "auto",
                   // maxHeight: `${pos.height * 2}px`,
-                  background: `${theme.background}`,
+                  backgroundColor: `${theme.background}`,
                   color: `${theme.text}`,
                   padding: `${padding * 2}px ${padding * 4}px`,
                   borderRadius: "8px",
@@ -7063,7 +7056,8 @@ Return ONLY a JSON object like:
       GM_addStyle(`
         .translator-context-menu {
           position: fixed;
-          background: ${theme.background};
+          color: ${theme.text};
+          background-color: ${theme.background};
           border: 1px solid ${theme.border};
           border-radius: 8px;
           padding: 5px 0;
@@ -7091,14 +7085,17 @@ Return ONLY a JSON object like:
           padding: 8px 15px;
           cursor: pointer;
           color: ${theme.text};
+          background-color: ${theme.background};
+          border: 1px solid ${theme.border};
           transition: all 0.2s ease;
           display: flex;
           align-items: center;
           gap: 8px;
           white-space: nowrap;
+          z-index: 2147483647 !important;
         }
         .translator-context-menu-item:hover {
-          background: ${theme.button.translate.background};
+          background-color: ${theme.button.translate.background};
           color: ${theme.button.translate.text};
         }
         .translator-context-menu-item:active {
