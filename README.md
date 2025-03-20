@@ -1,8 +1,8 @@
-# Gemini AI Translator - Công cụ dịch thuật đa năng tích hợp AI
+# King Translator AI - Công cụ dịch thuật đa năng tích hợp AI
 
 ![Version](https://img.shields.io/badge/version-4.2-blue)
 ![Status](https://img.shields.io/badge/status-updated-green)
-![License](https://img.shields.io/badge/license-GNU-orange)
+![License](https://img.shields.io/badge/license-GPL3-orange)
 
 <div align="center">
   <img src="kings.jpg" alt="Translator AI Logo" width="200"/>
@@ -63,8 +63,8 @@ Translator AI là userscript dịch thuật tích hợp AI, cho phép dịch vă
    - Cài đặt Violentmonkey hoặc Tampermonkey từ store của trình duyệt
 
 2. **Cài đặt Script**
-   - Phiên bản bình thường: [Github](https://github.com/king1x32/UserScripts/raw/refs/heads/main/Gemini_AI_Translator.user.js) hoặc [Greasyfork](https://greasyfork.org/vi/scripts/529348-gemini-ai-translator-inline-popup?locale_override=1)
-   - Phiên bản nén (nhẹ hơn, mượt hơn): [Github](https://raw.githubusercontent.com/king1x32/compiledUserscripts/release/release/Gemini20AI20Translator2028Inline2020Popup29.user.js)
+   - Phiên bản bình thường: [Github](https://github.com/king1x32/UserScripts/raw/main/King_Translator_AI.user.js) hoặc [Greasyfork](https://greasyfork.org/vi/scripts/529348-king-translator-ai)
+   - Phiên bản nén (nhẹ hơn, mượt hơn): [Github](https://raw.githubusercontent.com/king1x32/compiledUserscripts/release/release/King20Translator20AI.user.js)
 
 3. **Cấu hình API**
    - Mở cài đặt (menu ở biểu tượng Violentmonkey, Alt + S, chạm 4 ngón)

@@ -4,6 +4,7 @@
 // @version      4.2.3
 // @author       King1x32
 // @icon         https://raw.githubusercontent.com/king1x32/UserScripts/refs/heads/main/kings.jpg
+// @license      GPL3
 // @description  Dịch văn bản (bôi đen văn bản, khi nhập văn bản), hình ảnh, audio, video bằng Google Gemini API. Hỗ trợ popup phân tích từ vựng, popup dịch và dịch nhanh.
 // @match        *://*/*
 // @match        file:///*
