@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         Gemini AI Translator (Inline & Popup)
-// @namespace    Gemini AI Translator (Inline & Popup)
-// @version      4.2.2
+// @name         King Translator AI
+// @namespace    https://kingsmanvn.pages.dev
+// @version      4.2.3
 // @author       King1x32
 // @icon         https://raw.githubusercontent.com/king1x32/UserScripts/refs/heads/main/kings.jpg
 // @description  Dịch văn bản (bôi đen văn bản, khi nhập văn bản), hình ảnh, audio, video bằng Google Gemini API. Hỗ trợ popup phân tích từ vựng, popup dịch và dịch nhanh.
@@ -19,8 +19,8 @@
 // @require      https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js
 // @require      https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js
 // @homepageURL  https://github.com/king1x32/UserScripts
-// @downloadURL  https://raw.githubusercontent.com/king1x32/UserScripts/refs/heads/main/Gemini_AI_Translator.user.js
-// @updateURL    https://raw.githubusercontent.com/king1x32/UserScripts/refs/heads/main/Gemini_AI_Translator.user.js
+// @downloadURL  https://raw.githubusercontent.com/king1x32/UserScripts/refs/heads/main/King_Translator_AI.user.js
+// @updateURL    https://raw.githubusercontent.com/king1x32/UserScripts/refs/heads/main/King_Translator_AI.user.js
 // ==/UserScript==
 (function() {
   "use strict";
@@ -449,7 +449,7 @@
       this.queue = [];
       this.processing = false;
       this.retryDelays = [1000, 2000, 4000];
-      this.batchSize = 6; // Số api đa luồng
+      this.batchSize = 5; // Số api đa luồng
       this.batchDelay = 100;
     }
     async optimizeRequest(request) {
@@ -471,15 +471,12 @@
         batches.push(requests.slice(i, i + this.batchSize));
       }
       const results = [];
-      for (const batch of batches) {
+      await Promise.all(batches.map(async (batch) => {
         const batchResults = await Promise.all(
           batch.map((req) => this.executeRequest(req))
         );
         results.push(...batchResults);
-        if (batches.indexOf(batch) < batches.length - 1) {
-          await new Promise((resolve) => setTimeout(resolve, this.batchDelay));
-        }
-      }
+      }));
       return results;
     }
     calculatePriority(request) {
@@ -826,7 +823,7 @@
       styleElement.textContent = resetStyle;
       container.appendChild(styleElement);
       container.innerHTML += `
-<h2>Cài đặt Translator AI</h2>
+<h2>Cài đặt King Translator AI</h2>
 <div style="margin-bottom: 15px;">
   <h3>GIAO DIỆN</h3>
   <div class="radio-group">
@@ -2354,7 +2351,7 @@
       this.failedKeys = new Map();
       this.activeKeys = new Map();
       this.keyRotationInterval = 10000; // 10s
-      this.maxConcurrentRequests = 4; // Số request đồng thời tối đa cho mỗi key
+      this.maxConcurrentRequests = 3; // Số request đồng thời tối đa cho mỗi key
       this.setupKeyRotation();
     }
     markKeyAsFailed(key) {
@@ -2451,18 +2448,12 @@
       for (let i = 0; i < Math.min(maxConcurrent, availableKeys.length); i++) {
         promises.push(processNext());
       }
-      const results = await Promise.allSettled(promises);
-      const successResults = results
-        .filter((r) => r.status === "fulfilled" && r.value)
-        .map((r) => r.value);
+      const results = await Promise.all(promises);
+      const successResults = results.filter(r => r && r.status === "fulfilled").map(r => r.value);
       if (successResults.length > 0) {
         return successResults;
       }
-      throw new Error(
-        `Tất cả API key đều thất bại: ${errors
-          .map((e) => e.error.message)
-          .join(", ")}`
-      );
+      throw new Error(`Tất cả API key đều thất bại: ${errors.map(e => e.error.message).join(", ")}`);
     }
     markKeyAsFailed(key) {
       this.failedKeys.set(key, {
@@ -3550,70 +3541,43 @@
         const settings = this.translator.userSettings.settings.displayOptions;
         const mode = settings.translationMode;
         const showSource = settings.languageLearning.showSource;
-        const chunks = this.createChunks(textNodes);
-        for (const chunk of chunks) {
+        const chunks = this.createChunks(textNodes, 2000); // Tăng kích thước chunk
+        const translations = await Promise.all(chunks.map(async (chunk) => {
           const textsToTranslate = chunk
             .map((node) => node.textContent.trim())
             .filter((text) => text.length > 0)
             .join("\n");
-          if (!textsToTranslate) continue;
+          if (!textsToTranslate) return null;
           try {
-            const prompt = this.translator.createPrompt(
-              textsToTranslate,
-              "page"
-            );
+            const prompt = this.translator.createPrompt(textsToTranslate, "page");
             const translatedText = await this.translator.api.request(prompt);
-            if (translatedText) {
-              const translatedParts = translatedText.split("\n");
-              let translationIndex = 0;
-              for (let i = 0; i < chunk.length; i++) {
-                const node = chunk[i];
-                const text = node.textContent.trim();
-                if (text.length > 0 && node.parentNode) {
-                  this.originalTexts.set(node, node.textContent);
-                  if (translationIndex < translatedParts.length) {
-                    let translated =
-                      translatedParts[translationIndex++] || node.textContent;
-                    let output = "";
-                    if (mode === "translation_only") {
-                      output = translated;
-                    } else if (mode === "parallel") {
-                      output = `[GỐC]: ${text}  [DỊCH]: ${translated.split("<|>")[2]?.trim() || translated}   `;
-                    } else if (mode === "language_learning") {
-                      let sourceHTML = "";
-                      if (showSource) {
-                        sourceHTML = `[GỐC]: ${text}`;
-                      }
-                      let pinyinHTML = "";
-                      const pinyin = translated.split("<|>")[1]?.trim();
-                      if (pinyin) {
-                        pinyinHTML = `[PINYIN]: ${pinyin}`;
-                      }
-                      const translation =
-                        translated.split("<|>")[2]?.trim() || translated;
-                      const translationHTML = `[DỊCH]: ${translation}`;
-                      output = `${sourceHTML} ${pinyinHTML} ${translationHTML}   `;
-                    }
-                    node.textContent = output;
-                  }
-                }
+            return { chunk, translatedText };
+          } catch (error) {
+            console.error("Chunk translation error:", error);
+            return null;
+          }
+        }));
+        translations.forEach(translation => {
+          if (!translation) return;
+          const { chunk, translatedText } = translation;
+          const translatedParts = translatedText.split("\n");
+          let translationIndex = 0;
+          chunk.forEach((node, i) => {
+            const text = node.textContent.trim();
+            if (text.length > 0 && node.parentNode) {
+              this.originalTexts.set(node, node.textContent);
+              if (translationIndex < translatedParts.length) {
+                let translated = translatedParts[translationIndex++];
+                node.textContent = this.formatTranslation(text, translated, mode, settings);
               }
             }
-          } catch (error) {
-            console.error("Error translating chunk:", error);
-          }
-        }
+          });
+        });
         this.isTranslated = true;
-        return {
-          success: true,
-          message: "Đã dịch xong trang",
-        };
+        return { success: true, message: "Đã dịch xong trang" };
       } catch (error) {
         console.error("Page translation error:", error);
-        return {
-          success: false,
-          message: error.message,
-        };
+        return { success: false, message: error.message };
       }
     }
     async detectContext(text) {
@@ -4248,17 +4212,13 @@
       }
       return nodes;
     }
-    createChunks(nodes) {
+    createChunks(nodes, maxChunkSize = 2000) {
       const chunks = [];
       let currentChunk = [];
       let currentLength = 0;
-      const maxChunkLength = 1000;
       for (const node of nodes) {
         const text = node.textContent.trim();
-        if (
-          currentLength + text.length > maxChunkLength &&
-          currentChunk.length > 0
-        ) {
+        if ((currentLength + text.length > maxChunkSize) && currentChunk.length > 0) {
           chunks.push(currentChunk);
           currentChunk = [];
           currentLength = 0;
@@ -7575,7 +7535,7 @@ Return ONLY a JSON object like:
       timeout = setTimeout(later, wait);
     };
   }
-  GM_registerMenuCommand("Cài đặt Translator AI", () => {
+  GM_registerMenuCommand("Cài đặt King Translator AI", () => {
     const translator = window.translator;
     if (translator) {
       const settingsUI = translator.userSettings.createSettingsUI();
