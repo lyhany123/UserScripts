@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Gemini AI Translator (Inline & Popup)
 // @namespace    Gemini AI Translator (Inline & Popup)
-// @version      4.2.1
+// @version      4.2.2
 // @author       King1x32
 // @icon         https://raw.githubusercontent.com/king1x32/UserScripts/refs/heads/main/kings.jpg
 // @description  Dịch văn bản (bôi đen văn bản, khi nhập văn bản), hình ảnh, audio, video bằng Google Gemini API. Hỗ trợ popup phân tích từ vựng, popup dịch và dịch nhanh.
@@ -211,6 +211,7 @@
       mode: "dark",
       light: {
         background: "#cccccc",
+        backgroundShadow: "rgba(255, 255, 255, 0.05)",
         text: "#333333",
         border: "#bbb",
         title: "#202020",
@@ -222,6 +223,7 @@
       },
       dark: {
         background: "#333333",
+        backgroundShadow: "rgba(0, 0, 0, 0.05)",
         text: "#cccccc",
         border: "#555",
         title: "#eeeeee",
@@ -322,12 +324,6 @@
     },
     inputTranslation: {
       enabled: true,
-      shortcut: {
-        key: "t",
-        altKey: true,
-      },
-      buttonPosition: "auto", // 'left', 'right', 'bottom'
-      showForSearchBoxes: true,
       excludeSelectors: [], // Selectors để loại trừ
     },
     pageTranslation: {
@@ -408,6 +404,7 @@
       settingsEnabled: true,
       enabled: true,
       pageTranslate: { key: "f", altKey: true },
+      inputTranslate: { key: "t", altKey: true },
       quickTranslate: { key: "q", altKey: true },
       popupTranslate: { key: "e", altKey: true },
       advancedTranslate: { key: "a", altKey: true },
@@ -598,7 +595,7 @@
         font-size: 14px !important;
       }
       .translator-tools-dropdown {
-        min-width: 185px !important;
+        min-width: 195px !important;
         max-height: 60vh !important;
         overflow-y: auto !important;
       }
@@ -651,10 +648,9 @@
       }
       this.isSettingsUIOpen = true;
       const container = document.createElement("div");
-      const mode =
-        this.settings.theme ? this.settings.theme : CONFIG.THEME.mode;
-      const theme = CONFIG.THEME[mode];
-      const isDark = this.settings.theme === "dark";
+      const themeMode = this.settings.theme ? this.settings.theme : CONFIG.THEME.mode;
+      const theme = CONFIG.THEME[themeMode];
+      const isDark = themeMode === "dark";
       const geminiModels = {
         fast: CONFIG.API.providers.gemini.models.fast || [],
         pro: CONFIG.API.providers.gemini.models.pro || [],
@@ -710,17 +706,6 @@
             align-items: center !important;
             justify-content: center !important;
         }
-        #apiKey {
-            width: calc(100% - 13px) !important;
-            min-width: calc(100% - 13px) !important;
-            max-width: calc(100% - 13px) !important;
-            box-sizing: border-box !important;
-        }
-        #apiKey input[type="text"] {
-            padding: 0px 5px !important;
-            -webkit-appearance: auto !important;
-            -moz-appearance: auto !important;
-        }
         button {
             font-family: Arial, sans-serif !important;
             font-size: 14px !important;
@@ -766,7 +751,7 @@
           letter-spacing: 0.3px !important;
         }
         button:hover {
-          transform: translateY(-1px) !important;
+          transform: translateY(-2px) !important;
           box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
         }
         button:active {
@@ -993,7 +978,7 @@
 <div style="margin-bottom: 15px;">
   <h3>TOOLS DỊCH</h3>
   <div class="settings-grid">
-    <span class="settings-label">Hiển thị Tools ⚙️:</span>
+    <span class="settings-label">Hiển thị Tools ⚙️</span>
     <input type="checkbox" id="showTranslatorTools"
       ${localStorage.getItem("translatorToolsEnabled") === "true"
           ? "checked"
@@ -1528,20 +1513,20 @@
         }>
   </div>
   <div class="settings-grid">
-      <span class="settings-label">Dịch text trong hộp nhập:</span>
-      <div class="shortcut-container">
-          <span class="shortcut-prefix">Cmd/Alt &nbsp+</span>
-          <input type="text" id="inputTranslationKey" class="shortcut-input settings-input"
-              value="${this.settings.inputTranslation?.shortcut?.key || "t"}">
-      </div>
-  </div>
-  <div class="settings-grid">
     <span class="settings-label">Dịch trang:</span>
     <div class="shortcut-container">
       <span class="shortcut-prefix">Cmd/Alt &nbsp+</span>
       <input type="text" id="pageTranslateKey" class="shortcut-input settings-input"
         value="${this.settings.shortcuts.pageTranslate.key}">
     </div>
+  </div>
+  <div class="settings-grid">
+      <span class="settings-label">Dịch text trong hộp nhập:</span>
+      <div class="shortcut-container">
+          <span class="shortcut-prefix">Cmd/Alt &nbsp+</span>
+          <input type="text" id="inputTranslationKey" class="shortcut-input settings-input"
+              value="${this.settings.shortcuts.inputTranslate.key}">
+      </div>
   </div>
   <div class="settings-grid">
     <span class="settings-label">Dịch nhanh:</span>
@@ -2158,10 +2143,6 @@
         },
         inputTranslation: {
           enabled: settingsUI.querySelector("#inputTranslationEnabled").checked,
-          shortcut: {
-            key: settingsUI.querySelector("#inputTranslationKey").value,
-            altKey: true,
-          },
         },
         promptSettings: {
           enabled: true,
@@ -2254,6 +2235,10 @@
           enabled: settingsUI.querySelector("#shortcutsEnabled").checked,
           pageTranslate: {
             key: settingsUI.querySelector("#pageTranslateKey").value,
+            altKey: true,
+          },
+          inputTranslate: {
+            key: settingsUI.querySelector("#inputTranslationKey").value,
             altKey: true,
           },
           quickTranslate: {
@@ -2622,7 +2607,8 @@
         `);
     }
     setupObservers() {
-      if (!this.translator.userSettings.settings.inputTranslation?.enabled) return;
+      const settings = this.translator.userSettings.settings;
+      if (!settings.inputTranslation?.enabled) return;
       this.mutationObserver = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
           mutation.addedNodes.forEach((node) => {
@@ -2665,6 +2651,8 @@
       ].join(",");
     }
     isValidEditor(element) {
+      const settings = this.translator.userSettings.settings;
+      if (!settings.inputTranslation?.enabled && !settings.shortcuts?.enabled) return;
       if (!element) return false;
       const style = window.getComputedStyle(element);
       if (style.display === "none" || style.visibility === "hidden") {
@@ -2695,7 +2683,8 @@
       return null;
     }
     setupEventListeners() {
-      if (!this.translator.userSettings.settings.inputTranslation?.enabled) return;
+      const settings = this.translator.userSettings.settings;
+      if (!settings.inputTranslation?.enabled) return;
       document.addEventListener("focusin", (e) => {
         const editor = this.findParentEditor(e.target);
         if (editor) {
@@ -2722,21 +2711,6 @@
             this.addTranslateButton(editor);
           }
           this.updateButtonVisibility(editor);
-        }
-      });
-      document.addEventListener('keydown', (e) => {
-        const settings = this.translator.userSettings.settings;
-        const shortcut = settings.inputTranslation?.shortcut;
-        if (!settings.inputTranslation?.enabled || !settings.shortcuts?.enabled) return;
-        if ((e.altKey || e.metaKey) && e.key.toLowerCase() === shortcut.key.toLowerCase()) {
-          e.preventDefault();
-          const activeElement = document.activeElement;
-          if (this.isValidEditor(activeElement)) {
-            const text = this.getEditorContent(activeElement);
-            if (text) {
-              this.translateEditor(activeElement, true);
-            }
-          }
         }
       });
     }
@@ -2777,6 +2751,8 @@
       }
     }
     getEditorContent(editor) {
+      const settings = this.translator.userSettings.settings;
+      if (!settings.inputTranslation?.enabled && !settings.shortcuts?.enabled) return;
       let content = "";
       if (editor.value !== undefined) {
         content = editor.value;
@@ -2809,7 +2785,7 @@
             align-items: center;
             z-index: 2147483647 !important;
             pointer-events: auto;
-            background-color: ${theme.background};
+            background-color: rgba(0,74,153,0.1);
             border-radius: 8px;
             padding: 2px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.3);
@@ -2824,7 +2800,7 @@
       button.title = title;
       const theme = this.getCurrentTheme();
       button.style.cssText = `
-            background-color: transparent;
+            background-color: rgba(255,255,255,0.05);
             color: ${theme.text};
             border: none;
             border-radius: 8px;
@@ -2851,7 +2827,8 @@
       return button;
     }
     async translateEditor(editor, reverse = false) {
-      if (!this.translator.userSettings.settings.inputTranslation?.enabled) return;
+      const settings = this.translator.userSettings.settings;
+      if (!settings.inputTranslation?.enabled && !settings.shortcuts?.enabled) return;
       if (this.isTranslating) return;
       this.isTranslating = true;
       const container = this.activeButtons.get(editor);
@@ -2922,9 +2899,8 @@
       }
     }
     getCurrentTheme() {
-      const mode =
-        this.translator.userSettings.settings.theme ? this.translator.userSettings.settings.theme : CONFIG.THEME.mode;
-      const theme = CONFIG.THEME[mode];
+      const themeMode = this.translator.userSettings.settings.theme;
+      const theme = CONFIG.THEME[themeMode];
       return {
         backgroundColor: theme.background,
         text: theme.text,
@@ -2984,7 +2960,8 @@
       }
     }
     initializeExistingEditors() {
-      if (!this.translator.userSettings.settings.inputTranslation?.enabled) return;
+      const settings = this.translator.userSettings.settings;
+      if (!settings.inputTranslation?.enabled) return;
       document.querySelectorAll(this.getEditorSelectors()).forEach((editor) => {
         if (this.isValidEditor(editor) && this.getEditorContent(editor)) {
           this.addTranslateButton(editor);
@@ -4668,9 +4645,9 @@
         localStorage.setItem("translatorToolsEnabled", "true");
       }
       // CSS tổng hợp cho settings
-      const mode = this.translator.userSettings.settings.theme ? this.translator.userSettings.settings.theme : CONFIG.THEME.mode;
-      const theme = CONFIG.THEME[mode];
-      const isDark = mode === "dark";
+      const themeMode = this.translator.userSettings.settings.theme;
+      const theme = CONFIG.THEME[themeMode];
+      const isDark = themeMode === "dark";
       GM_addStyle(`
     .translator-settings-container {
         z-index: 2147483647 !important;
@@ -4678,7 +4655,7 @@
         background-color: ${theme.background} !important;
         color: ${theme.text} !important;
         padding: 20px !important;
-        border-radius: 10px !important;
+        border-radius: 12px !important;
         box-shadow: 0 2px 10px rgba(0,0,0,0.3) !important;
         width: auto !important;
         min-width: 320px !important;
@@ -4738,7 +4715,7 @@
     .translator-settings-container input[type="checkbox"] {
         display: flex !important;
         position: relative !important;
-        margin: 5px 50% 5px 50% !important;
+        margin: 5px 53% 5px 47% !important;
         align-items: center !important;
         justify-content: center !important;
     }
@@ -4752,7 +4729,7 @@
         color: ${theme.text} !important;
         border: 1px solid ${theme.border} !important;
         border-radius: 8px !important;
-        padding: 5px 8px !important;
+        padding: 7px 10px !important;
         margin: 5px !important;
         font-size: 14px !important;
         line-height: normal !important;
@@ -4808,11 +4785,44 @@
         gap: 8px !important;
         line-height: 1 !important;
     }
+    .translator-settings-container .api-key-entry input[type="text"].gemini-key,
+    .translator-settings-container .api-key-entry input[type="text"].openai-key {
+      padding: 8px 10px !important;
+      margin: 0px 3px 3px 15px !important;
+      appearance: auto !important;
+      -webkit-appearance: auto !important;
+      -moz-appearance: auto !important;
+      font-size: 14px !important;
+      line-height: normal !important;
+      width: auto !important;
+      min-width: 100px !important;
+      display: inline-block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      border: 1px solid ${theme.border} !important;
+      border-radius: 10px !important;
+      box-sizing: border-box !important;
+      font-family: Arial, sans-serif !important;
+      text-align: left !important;
+      vertical-align: middle !important;
+      background-color: ${isDark ? "#202020" : "#eeeeee"} !important;
+      color: ${theme.text} !important;
+    }
+    .translator-settings-container .api-key-entry input[type="text"].gemini-key:focus,
+    .translator-settings-container .api-key-entry input[type="text"].openai-key:focus {
+      outline: 3px solid rgba(74, 144, 226, 0.5) !important;
+      outline-offset: 1px !important;
+      box-shadow: none !important;
+    }
+    .translator-settings-container .api-key-entry {
+      display: flex !important;
+      gap: 10px !important;
+      align-items: center !important;
+    }
     .remove-key {
         display: inline-flex !important;
         align-items: center !important;
         justify-content: center !important;
-        margin-top: 9px !important;
         width: 24px !important;
         height: 24px !important;
         padding: 0 !important;
@@ -4836,7 +4846,7 @@
     bottom: 40px;
     right: 25px;
     color: ${theme.text} !important;
-    border-radius: 8px !important;
+    border-radius: 10px !important;
     z-index: 2147483647 !important;
     display: block !important;
     visibility: visible !important;
@@ -4852,7 +4862,7 @@
     gap: 8px !important;
     padding: 12px 20px !important;
     border: none !important;
-    border-radius: 8px !important;
+    border-radius: 9px !important;
     background-color: rgba(74,144,226,0.4) !important;
     color: white !important;
     cursor: pointer !important;
@@ -4871,10 +4881,10 @@
     margin-bottom: 10px !important;
     background-color: ${theme.background} !important;
     color: ${theme.text} !important;
-    border-radius: 8px !important;
+    border-radius: 10px !important;
     box-shadow: 0 2px 10px rgba(0,0,0,0.1) !important;
-    padding: 5px !important;
-    min-width: 200px !important;
+    padding: 15px 12px 9px 12px !important;
+    min-width: 205px !important;
     z-index: 2147483647 !important;
     visibility: visible !important;
     opacity: 1 !important;
@@ -4883,13 +4893,14 @@
     display: flex !important;
     align-items: center !important;
     gap: 10px !important;
-    padding: 12px 15px !important;
+    padding: 10px !important;
+    margin-bottom: 5px !important;
     cursor: pointer !important;
     transition: all 0.2s ease !important;
-    border-radius: 8px !important;
-    background-color: ${theme.background} !important;
+    border-radius: 10px !important;
+    background-color: ${theme.backgroundShadow} !important;
     color: ${theme.text} !important;
-    border: 3px solid ${theme.border} !important;
+    border: 1px solid ${theme.border} !important;
     visibility: visible !important;
     opacity: 1 !important;
   }
@@ -4903,6 +4914,13 @@
   }
   .item-text {
     font-size: 14px !important;
+  }
+  .translator-tools-item:hover {
+    background-color: ${theme.button.translate.background} !important;
+    color: ${theme.button.translate.text} !important;
+  }
+  .translator-tools-item:active {
+    transform: scale(0.98) !important;
   }
 `);
       GM_addStyle(`
@@ -4961,6 +4979,7 @@
       this.ocr = new OCRManager(translator);
       this.media = new MediaManager(translator);
       this.page = new PageTranslator(translator);
+      this.input = new InputTranslator(translator);
       // Bind các methods
       this.handleSettingsShortcut = this.handleSettingsShortcut.bind(this);
       this.handleTranslationShortcuts =
@@ -5089,7 +5108,7 @@
         fontSize: settings.fontSize,
       });
       translationDiv.innerHTML = formattedTranslation;
-      const themeMode = this.translator.userSettings.settings.theme ? this.translator.userSettings.settings.theme : CONFIG.THEME.mode;
+      const themeMode = this.translator.userSettings.settings.theme;
       const theme = CONFIG.THEME[themeMode];
       translationDiv.appendChild(this.createCloseButton());
       lastSelectedParagraph.parentNode.appendChild(translationDiv);
@@ -5117,10 +5136,9 @@
       pinyin = ""
     ) {
       this.removeTranslateButton();
-      const mode =
-        this.translator.userSettings.settings.theme ? this.translator.userSettings.settings.theme : CONFIG.THEME.mode;
-      const theme = CONFIG.THEME[mode];
-      const isDark = mode === "dark";
+      const themeMode = this.translator.userSettings.settings.theme;
+      const theme = CONFIG.THEME[themeMode];
+      const isDark = themeMode === "dark";
       const displayOptions =
         this.translator.userSettings.settings.displayOptions;
       const popup = document.createElement("div");
@@ -5229,9 +5247,9 @@
       ) {
         const originalContainer = document.createElement("div");
         Object.assign(originalContainer.style, {
-          color: theme.content,
+          color: theme.text,
           padding: "10px 15px",
-          backgroundColor: `${isDark ? "#202020" : "#eeeeee"}`,
+          backgroundColor: `${theme.backgroundShadow}`,
           borderRadius: "8px",
           border: `1px solid ${theme.border}`,
           wordBreak: "break-word",
@@ -5239,7 +5257,7 @@
         });
         originalContainer.innerHTML = `
       <div style="font-weight: 500; margin-bottom: 5px; color: ${theme.title};">Bản gốc:</div>
-      <div style="line-height: 1.5; color: ${theme.content};">&nbsp;&nbsp;&nbsp;&nbsp; ${originalText}</div>
+      <div style="line-height: 1.5; color: ${theme.text};">&nbsp;&nbsp;&nbsp;&nbsp; ${originalText}</div>
     `;
         textContainer.appendChild(originalContainer);
       }
@@ -5249,9 +5267,9 @@
       ) {
         const originalContainer = document.createElement("div");
         Object.assign(originalContainer.style, {
-          color: theme.content,
+          color: theme.text,
           padding: "10px 15px",
-          backgroundColor: `${isDark ? "#202020" : "#eeeeee"
+          backgroundColor: `${theme.backgroundShadow
             }`,
           borderRadius: "8px",
           border: `1px solid ${theme.border}`,
@@ -5260,7 +5278,7 @@
         });
         originalContainer.innerHTML = `
       <div style="font-weight: 500; margin-bottom: 5px; color: ${theme.title};">Bản gốc:</div>
-      <div style="line-height: 1.5; color: ${theme.content};">&nbsp;&nbsp;&nbsp;&nbsp; ${originalText}</div>
+      <div style="line-height: 1.5; color: ${theme.text};">&nbsp;&nbsp;&nbsp;&nbsp; ${originalText}</div>
     `;
         textContainer.appendChild(originalContainer);
       }
@@ -5270,9 +5288,9 @@
       ) {
         const pinyinContainer = document.createElement("div");
         Object.assign(pinyinContainer.style, {
-          color: theme.content,
+          color: theme.text,
           padding: "10px 15px",
-          backgroundColor: `${isDark ? "#202020" : "#eeeeee"
+          backgroundColor: `${theme.backgroundShadow
             }`,
           borderRadius: "8px",
           border: `1px solid ${theme.border}`,
@@ -5281,15 +5299,15 @@
         });
         pinyinContainer.innerHTML = `
       <div style="font-weight: 500; margin-bottom: 5px; color: ${theme.title};">Pinyin:</div>
-      <div style="line-height: 1.5; color: ${theme.content};">&nbsp;&nbsp;&nbsp;&nbsp; ${pinyin}</div>
+      <div style="line-height: 1.5; color: ${theme.text};">&nbsp;&nbsp;&nbsp;&nbsp; ${pinyin}</div>
     `;
         textContainer.appendChild(pinyinContainer);
       }
       const translationContainer = document.createElement("div");
       Object.assign(translationContainer.style, {
-        color: theme.content,
+        color: theme.text,
         padding: "10px 15px",
-        backgroundColor: `${isDark ? "#202020" : "#eeeeee"}`,
+        backgroundColor: `${theme.backgroundShadow}`,
         borderRadius: "8px",
         border: `1px solid ${theme.border}`,
         wordBreak: "break-word",
@@ -5298,7 +5316,7 @@
       translationContainer.innerHTML = `
     <div style="font-weight: 500; margin-bottom: 5px; color: ${theme.title
         };">Bản dịch:</div>
-    <div style="line-height: 1.5; color: ${theme.content};">${this.formatTranslation(cleanedText, theme)}</div>
+    <div style="line-height: 1.5; color: ${theme.text};">${this.formatTranslation(cleanedText, theme)}</div>
   `;
       textContainer.appendChild(translationContainer);
       contentContainer.appendChild(textContainer);
@@ -5347,7 +5365,7 @@
           if (line.startsWith(`<b style="color: ${theme.text};">KEYWORD</b>:`)) {
             return `<h4 style="margin-bottom: 5px; color: ${theme.text};">${line}</h4>`;
           }
-          return `<p style="margin-left: 20px; margin-bottom: 10px; white-space: pre-wrap; word-wrap: break-word; text-align: justify; color: ${theme.content};">${line}</p>`;
+          return `<p style="margin-left: 20px; margin-bottom: 10px; white-space: pre-wrap; word-wrap: break-word; text-align: justify; color: ${theme.text};">${line}</p>`;
         })
         .join("");
     }
@@ -5410,9 +5428,8 @@
       let top = Math.min(y + 30, viewportHeight - buttonHeight - 30);
       left = Math.max(padding, left);
       top = Math.max(30, top);
-      const mode =
-        this.translator.userSettings.settings.theme ? this.translator.userSettings.settings.theme : CONFIG.THEME.mode;
-      const theme = CONFIG.THEME[mode];
+      const themeMode = this.translator.userSettings.settings.theme;
+      const theme = CONFIG.THEME[themeMode];
       Object.assign(button.style, {
         ...CONFIG.STYLES.button,
         backgroundColor: theme.button.translate.background,
@@ -5737,7 +5754,8 @@
       }
     }
     async handlePageTranslation() {
-      if (!this.translator.userSettings.settings.pageTranslation.enabled) {
+      const settings = this.translator.userSettings.settings;
+      if (!settings.pageTranslation?.enabled && !settings.shortcuts?.enabled) {
         this.showNotification("Tính năng dịch trang đang bị tắt", "warning");
         return;
       }
@@ -5781,7 +5799,9 @@
       }
     }
     setupQuickTranslateButton() {
-      if (!this.translator.userSettings.settings.pageTranslation.enabled) {
+      const settings = this.translator.userSettings.settings;
+      if (!settings.pageTranslation?.enabled && !settings.shortcuts?.enabled) {
+        this.showNotification("Tính năng dịch trang đang bị tắt", "warning");
         return;
       }
       const style = document.createElement("style");
@@ -5854,21 +5874,6 @@
           style.parentNode.removeChild(style);
         }
       }, 10000);
-      const pageShortcut =
-        this.translator.userSettings.settings.shortcuts.pageTranslate;
-      const shortcutsEnabled =
-        this.translator.userSettings.settings.shortcuts?.enabled;
-      if (shortcutsEnabled) {
-        document.addEventListener("keydown", (e) => {
-          if (
-            (e.altKey || e.metaKey) &&
-            e.key.toLowerCase() === pageShortcut.key.toLowerCase()
-          ) {
-            e.preventDefault();
-            this.handlePageTranslation();
-          }
-        });
-      }
     }
     setupTranslatorTools() {
       const isEnabled =
@@ -6148,9 +6153,6 @@
     opacity: 0.7;
     cursor: not-allowed;
   }
-  .translator-tools-item:hover {
-    background-color: #f5f5f5;
-  }
   .translator-overlay {
     position: fixed;
     top: 0;
@@ -6194,21 +6196,6 @@
   .translator-cancel:hover {
     background-color: #ff0000;
     transform: scale(1.1);
-  }
-  /* Dark mode support */
-  @media (prefers-color-scheme: dark) {
-    .translator-tools-dropdown {
-      background-color: #333;
-    }
-    .translator-tools-item {
-      color: #fff;
-    }
-    .translator-tools-item:hover {
-      background-color: #444;
-    }
-    .translator-guide {
-      background-color: rgba(0,0,0,0.9);
-    }
   }
   /* Animation */
   @keyframes fadeIn {
@@ -6677,9 +6664,8 @@
                 };
                 const pos = calculatePosition();
                 const padding = 2;
-                const mode =
-                  this.translator.userSettings.settings.theme ? this.translator.userSettings.settings.theme : CONFIG.THEME.mode;
-                const theme = CONFIG.THEME[mode];
+                const themeMode = this.translator.userSettings.settings.theme;
+                const theme = CONFIG.THEME[themeMode];
                 Object.assign(overlay.style, {
                   position: "fixed",
                   left: `${pos.x}px`,
@@ -6912,7 +6898,7 @@ Return ONLY a JSON object like:
       const browser = navigator.userAgent;
       const sizes = {
         firefox: {
-          width: 270,
+          width: 275,
           height: 340,
           itemHeight: 34,
         },
@@ -6985,12 +6971,11 @@ Return ONLY a JSON object like:
           const viewportWidth = window.innerWidth;
           const viewportHeight = window.innerHeight;
           const menuWidth = 150;
-          const menuHeight = menuItems.length * 40;
+          const menuHeight = (menuItems.length * 40);
           const browserMenu = this.getBrowserContextMenuSize();
           const browserMenuWidth = browserMenu.width;
           const browserMenuHeight = browserMenu.height;
           const spaceWidth = browserMenuWidth + menuWidth;
-          const spaceHeight = browserMenuHeight + menuHeight;
           const remainingWidth = viewportWidth - e.clientX;
           const rightEdge = viewportWidth - menuWidth;
           const bottomEdge = viewportHeight - menuHeight;
@@ -6998,7 +6983,7 @@ Return ONLY a JSON object like:
           const browserMenuHeightEdge = viewportHeight - browserMenuHeight;
           let left, top;
           if (e.clientX < menuWidth && e.clientY < menuHeight) {
-            left = e.clientX + browserMenuWidth;
+            left = e.clientX + browserMenuWidth + 10;
             top = e.clientY;
           } else if (
             e.clientX > browserMenuWidthEdge &&
@@ -7016,8 +7001,8 @@ Return ONLY a JSON object like:
             e.clientX < menuWidth &&
             e.clientY > viewportHeight - browserMenuHeight
           ) {
-            left = e.clientX + browserMenuWidth;
-            top = e.clientY - spaceHeight;
+            left = e.clientX + browserMenuWidth + 10;
+            top = e.clientY - menuHeight;
           } else if (e.clientY < menuHeight) {
             left = e.clientX - menuWidth;
             top = e.clientY;
@@ -7050,17 +7035,15 @@ Return ONLY a JSON object like:
           window.addEventListener("scroll", handleScroll);
         }
       });
-      const mode =
-        this.translator.userSettings.settings.theme ? this.translator.userSettings.settings.theme : CONFIG.THEME.mode;
-      const theme = CONFIG.THEME[mode];
+      const themeMode = this.translator.userSettings.settings.theme;
+      const theme = CONFIG.THEME[themeMode];
       GM_addStyle(`
         .translator-context-menu {
           position: fixed;
           color: ${theme.text};
           background-color: ${theme.background};
-          border: 1px solid ${theme.border};
           border-radius: 8px;
-          padding: 5px 0;
+          padding: 8px 8px 5px 8px;
           min-width: 150px;
           box-shadow: 0 4px 12px rgba(0,0,0,0.15);
           z-index: 2147483647 !important;
@@ -7082,11 +7065,13 @@ Return ONLY a JSON object like:
           }
         }
         .translator-context-menu-item {
-          padding: 8px 15px;
+          padding: 5px;
+          margin-bottom: 3px;
           cursor: pointer;
           color: ${theme.text};
-          background-color: ${theme.background};
+          background-color: ${theme.backgroundShadow};
           border: 1px solid ${theme.border};
+          border-radius: 7px;
           transition: all 0.2s ease;
           display: flex;
           align-items: center;
@@ -7135,7 +7120,7 @@ Return ONLY a JSON object like:
     handleSettingsShortcut(e) {
       if (!this.translator.userSettings.settings.shortcuts?.settingsEnabled)
         return;
-      if ((e.altKey || e.metaKey) && e.key.toLowerCase() === "s") {
+      if ((e.altKey || e.metaKey) && e.key === "s") {
         e.preventDefault();
         const settingsUI = this.translator.userSettings.createSettingsUI();
         document.body.appendChild(settingsUI);
@@ -7143,19 +7128,30 @@ Return ONLY a JSON object like:
     }
     async handleTranslationShortcuts(e) {
       if (!this.translator.userSettings.settings.shortcuts?.enabled) return;
-      const selection = window.getSelection();
-      const selectedText = selection?.toString().trim();
-      if (!selectedText || this.isTranslating) return;
-      const targetElement = selection.anchorNode?.parentElement;
-      if (!targetElement) return;
       const shortcuts = this.translator.userSettings.settings.shortcuts;
       if (e.altKey || e.metaKey) {
         let translateType = null;
-        if (e.key.toLowerCase() === shortcuts.pageTranslate.key.toLowerCase()) {
+        if (e.key === shortcuts.pageTranslate.key) {
           e.preventDefault();
           await this.handlePageTranslation();
           return;
-        } else if (e.key === shortcuts.quickTranslate.key) {
+        } else if (e.key === shortcuts.inputTranslate.key) {
+          e.preventDefault();
+          const activeElement = document.activeElement;
+          if (this.input.isValidEditor(activeElement)) {
+            const text = this.input.getEditorContent(activeElement);
+            if (text) {
+              await this.input.translateEditor(activeElement, true);
+            }
+          }
+          return;
+        }
+        const selection = window.getSelection();
+        const selectedText = selection?.toString().trim();
+        if (!selectedText || this.isTranslating) return;
+        const targetElement = selection.anchorNode?.parentElement;
+        if (!targetElement) return;
+        if (e.key === shortcuts.quickTranslate.key) {
           e.preventDefault();
           translateType = "quick";
         } else if (e.key === shortcuts.popupTranslate.key) {
@@ -7339,9 +7335,7 @@ Return ONLY a JSON object like:
         this.userSettings.settings.cacheOptions.text.expirationTime
       );
       this.page = new PageTranslator(this);
-      if (this.userSettings.settings.inputTranslation?.enabled) {
-        this.inputTranslator = new InputTranslator(this);
-      }
+      this.inputTranslator = new InputTranslator(this);
       this.ui.setupEventListeners();
       this.cache.optimizeStorage();
       this.autoCorrectEnabled = true;
@@ -7489,7 +7483,7 @@ Return ONLY a JSON object like:
       - Sử dụng đại từ nhân xưng ngôn ngữ có mã ngôn ngữ là '${targetLanguage}' tự nhiên và hợp ngữ cảnh.
       - Tham khảo các trang web sau để lấy văn phong phù hợp cho các đoạn hội thoại liên quan đến sex: [https://truyensex.moe/, https://truyensexvn.org/, https://truyensex.vip/, https://truyensextv69.com/].
   Lưu ý:
-    - Những từ tên riêng, địa điểm thì hãy dịch theo nghĩa Hán Việt ví dụ như: Diệp Trần, Lục Thiếu Du, Long kiếm, Long Sĩ Đầu, Thiên kiếp, ngõ Nê Bình, ... thì giữ theo nghĩa Hán Việt sẽ hay hơn là dịch hẳn sang ngôn ngữ có mã ngôn ngữ là '${targetLanguage}'.`;
+    - Bản dịch phải hoàn toàn bằng ngôn ngữ có mã ngôn ngữ là '${targetLanguage}', nhưng ví dụ khi dịch sang tiếng Việt nếu gặp những danh từ riêng chỉ địa điểm hoặc tên riêng, có phạm trù trong ngôn ngữ là từ ghép của 2 ngôn ngữ gọi là từ Hán Việt, hãy dịch sang nghĩa từ Hán Việt như Diệp Trần, Lục Thiếu Du, Long kiếm, Thiên kiếp, núi Long Sĩ Đầu, ngõ Nê Bình, Thiên Kiếm môn,... thì sẽ hay hơn là dịch hẳn sang nghĩa tiếng Việt là Lá Trần, Rồng kiếm, Trời kiếp, núi Rồng Ngẩng Đầu,...`;
       const base_normal = `Cho bạn văn bản cần xử lý: "${text}"
     Hãy dịch văn bản cần xử lý trên sang ngôn ngữ có mã ngôn ngữ là '${targetLanguage}' với các yêu cầu sau:
       - Dịch phải tuân thủ chặt chẽ bối cảnh và sắc thái ban đầu của văn bản.
@@ -7505,7 +7499,7 @@ Return ONLY a JSON object like:
         - Sử dụng đại từ nhân xưng ngôn ngữ có mã ngôn ngữ là '${targetLanguage}' tự nhiên và hợp ngữ cảnh.
         - Tham khảo các trang web sau để lấy văn phong phù hợp cho các đoạn truyện liên quan đến sex: [https://truyensex.moe/, https://truyensexvn.org/, https://truyensex.vip/, https://truyensextv69.com/].
     Lưu ý:
-      - Những từ tên riêng, địa điểm thì hãy dịch theo nghĩa Hán Việt ví dụ như: Long kiếm, Long Sĩ Đầu, Thiên kiếp, ngõ Nê Bình, ... thì giữ theo nghĩa Hán Việt sẽ hay hơn là dịch hẳn sang ngôn ngữ có mã ngôn ngữ là '${targetLanguage}'.
+      - Bản dịch phải hoàn toàn bằng ngôn ngữ có mã ngôn ngữ là '${targetLanguage}', nhưng ví dụ khi dịch sang tiếng Việt nếu gặp những danh từ riêng chỉ địa điểm hoặc tên riêng, có phạm trù trong ngôn ngữ là từ ghép của 2 ngôn ngữ gọi là từ Hán Việt, hãy dịch sang nghĩa từ Hán Việt như Diệp Trần, Lục Thiếu Du, Long kiếm, Thiên kiếp, núi Long Sĩ Đầu, ngõ Nê Bình, Thiên Kiếm môn,... thì sẽ hay hơn là dịch hẳn sang nghĩa tiếng Việt là Lá Trần, Rồng kiếm, Trời kiếp, núi Rồng Ngẩng Đầu,...
       - Hãy in ra bản dịch mà không có dấu ngoặc kép, giữ nguyên định dạng phông chữ ban đầu và không giải thích gì thêm.`;
       const basePrompts = {
         normal: `${base_normal}`,
@@ -7518,7 +7512,7 @@ Return ONLY a JSON object like:
         - Sử dụng đại từ nhân xưng ngôn ngữ có mã ngôn ngữ là '${targetLanguage}' tự nhiên và hợp ngữ cảnh.
         - Tham khảo các trang web sau để lấy văn phong phù hợp cho các đoạn truyện liên quan đến sex: [https://truyensex.moe/, https://truyensexvn.org/, https://truyensex.vip/, https://truyensextv69.com/].
   Lưu ý:
-    - Những từ tên riêng, địa điểm thì hãy dịch theo nghĩa Hán Việt ví dụ như: Diệp Trần, Lục Thiếu Du, Long kiếm, Long Sĩ Đầu, Thiên kiếp, ngõ Nê Bình, ... thì giữ theo nghĩa Hán Việt sẽ hay hơn là dịch hẳn sang ngôn ngữ có mã ngôn ngữ là '${targetLanguage}'.
+    - Bản dịch phải hoàn toàn bằng ngôn ngữ có mã ngôn ngữ là '${targetLanguage}', nhưng ví dụ khi dịch sang tiếng Việt nếu gặp những danh từ riêng chỉ địa điểm hoặc tên riêng, có phạm trù trong ngôn ngữ là từ ghép của 2 ngôn ngữ gọi là từ Hán Việt, hãy dịch sang nghĩa từ Hán Việt như Diệp Trần, Lục Thiếu Du, Long kiếm, Thiên kiếp, núi Long Sĩ Đầu, ngõ Nê Bình, Thiên Kiếm môn,... thì sẽ hay hơn là dịch hẳn sang nghĩa tiếng Việt là Lá Trần, Rồng kiếm, Trời kiếp, núi Rồng Ngẩng Đầu,...
     - Chỉ trả về bản dịch ngôn ngữ có mã ngôn ngữ là '${targetLanguage}', không giải thích thêm.`,
         media: `${share_media}
     - Định dạng bản dịch của bạn theo định dạng SRT và đảm bảo rằng mỗi đoạn hội thoại được đánh số thứ tự, có thời gian bắt đầu và kết thúc rõ ràng. Không cần giải thích thêm.`,
@@ -7530,7 +7524,7 @@ Return ONLY a JSON object like:
     Văn bản cần xử lý: "${text}"
   Lưu ý:
     - Nếu có từ không phải là tiếng Trung, hãy trả về giá trị pinyin của từ đó là phiên âm của từ đó và theo ngôn ngữ đó (Nếu là tiếng Anh thì hay theo phiên âm của US). Ví dụ: Hello <|> /heˈloʊ/ <|> Xin chào
-    - Bản dịch phải hoàn toàn bằng ngôn ngữ có mã ngôn ngữ là '${targetLanguage}', nhưng trừ những từ Hán Việt như Long kiếm, Thiên kiếp,... thì giữ nguyên sẽ hay hơn là dịch hẳn sang ngôn ngữ có mã ngôn ngữ là '${targetLanguage}'.
+    - Bản dịch phải hoàn toàn bằng ngôn ngữ có mã ngôn ngữ là '${targetLanguage}', nhưng ví dụ khi dịch sang tiếng Việt nếu gặp những danh từ riêng chỉ địa điểm hoặc tên riêng, có phạm trù trong ngôn ngữ là từ ghép của 2 ngôn ngữ gọi là từ Hán Việt, hãy dịch sang nghĩa từ Hán Việt như Diệp Trần, Lục Thiếu Du, Long kiếm, Thiên kiếp, núi Long Sĩ Đầu, ngõ Nê Bình, Thiên Kiếm môn,... thì sẽ hay hơn là dịch hẳn sang nghĩa tiếng Việt là Lá Trần, Rồng kiếm, Trời kiếp, núi Rồng Ngẩng Đầu,...
     - Chỉ trả về bản dịch theo format trên và không giải thích thêm.`,
         advanced: `Dịch và phân tích từ khóa: "${text}"`,
         ocr: `Hãy trả về theo format sau, mỗi phần cách nhau bằng dấu <|> và không có giải thích thêm:
@@ -7538,7 +7532,7 @@ Return ONLY a JSON object like:
     Đọc hiểu thật kĩ và xử lý toàn bộ văn bản trong hình ảnh.
   Lưu ý:
     - Nếu có từ không phải là tiếng Trung, hãy trả về giá trị pinyin của từ đó là phiên âm của từ đó và theo ngôn ngữ đó (Nếu là tiếng Anh thì hay theo phiên âm của US). Ví dụ: Hello <|> /heˈloʊ/ <|> Xin chào
-    - Bản dịch phải hoàn toàn bằng ngôn ngữ có mã ngôn ngữ là '${targetLanguage}', nhưng trừ những từ Hán Việt như Long kiếm, Thiên kiếp,... thì giữ nguyên sẽ hay hơn là dịch hẳn sang ngôn ngữ có mã ngôn ngữ là '${targetLanguage}'.
+    - Bản dịch phải hoàn toàn bằng ngôn ngữ có mã ngôn ngữ là '${targetLanguage}', nhưng ví dụ khi dịch sang tiếng Việt nếu gặp những danh từ riêng chỉ địa điểm hoặc tên riêng, có phạm trù trong ngôn ngữ là từ ghép của 2 ngôn ngữ gọi là từ Hán Việt, hãy dịch sang nghĩa từ Hán Việt như Diệp Trần, Lục Thiếu Du, Long kiếm, Thiên kiếp, núi Long Sĩ Đầu, ngõ Nê Bình, Thiên Kiếm môn,... thì sẽ hay hơn là dịch hẳn sang nghĩa tiếng Việt là Lá Trần, Rồng kiếm, Trời kiếp, núi Rồng Ngẩng Đầu,...
     - Chỉ trả về bản dịch theo format trên, mỗi 1 cụm theo format sẽ ở 1 dòng và không giải thích thêm.`,
         media: `${share_media}
     - Định dạng bản dịch của bạn theo định dạng SRT phải đảm bảo rằng mỗi đoạn hội thoại được đánh số thứ tự, có thời gian bắt đầu và kết thúc, có dòng văn bản gốc và dòng văn bản dịch.
@@ -7549,7 +7543,7 @@ Return ONLY a JSON object like:
     Văn bản cần xử lý: "${text}"
   Lưu ý:
     - Nếu có từ không phải là tiếng Trung, hãy trả về giá trị pinyin của từ đó là phiên âm của từ đó và theo ngôn ngữ đó (Nếu là tiếng Anh thì hay theo phiên âm của US). Ví dụ: Hello <|> /heˈloʊ/ <|> Xin chào
-    - Bản dịch phải hoàn toàn bằng ngôn ngữ có mã ngôn ngữ là '${targetLanguage}', nhưng trừ những từ Hán Việt như Long kiếm, Thiên kiếp,... thì giữ nguyên sẽ hay hơn là dịch hẳn sang ngôn ngữ có mã ngôn ngữ là '${targetLanguage}'.
+    - Bản dịch phải hoàn toàn bằng ngôn ngữ có mã ngôn ngữ là '${targetLanguage}', nhưng ví dụ khi dịch sang tiếng Việt nếu gặp những danh từ riêng chỉ địa điểm hoặc tên riêng, có phạm trù trong ngôn ngữ là từ ghép của 2 ngôn ngữ gọi là từ Hán Việt, hãy dịch sang nghĩa từ Hán Việt như Diệp Trần, Lục Thiếu Du, Long kiếm, Thiên kiếp, núi Long Sĩ Đầu, ngõ Nê Bình, Thiên Kiếm môn,... thì sẽ hay hơn là dịch hẳn sang nghĩa tiếng Việt là Lá Trần, Rồng kiếm, Trời kiếp, núi Rồng Ngẩng Đầu,...
     - Chỉ trả về bản dịch theo format trên và không giải thích thêm.`,
       };
       return isPinyinMode ? pinyinPrompts[type] : basePrompts[type];
