@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         King Translator AI
 // @namespace    https://kingsmanvn.pages.dev
-// @version      4.2.3
+// @version      4.2.4
 // @author       King1x32
 // @icon         https://raw.githubusercontent.com/king1x32/UserScripts/refs/heads/main/kings.jpg
 // @license      GPL3
@@ -2351,57 +2351,101 @@
       this.settings = settings;
       this.failedKeys = new Map();
       this.activeKeys = new Map();
+      this.keyStats = new Map();
       this.keyRotationInterval = 10000; // 10s
-      this.maxConcurrentRequests = 3; // Số request đồng thời tối đa cho mỗi key
+      this.maxConcurrentRequests = 3;
+      this.retryDelays = [1000, 2000, 4000];
+      this.successRateThreshold = 0.7;
       this.setupKeyRotation();
     }
-    markKeyAsFailed(key) {
-      if (!key) return;
-      this.failedKeys.set(key, {
-        timestamp: Date.now(),
-        failures: (this.failedKeys.get(key)?.failures || 0) + 1,
-      });
-      if (this.activeKeys.has(key)) {
-        this.activeKeys.delete(key);
-      }
-    }
+
+    // Lấy key khả dụng
     getAvailableKeys(provider) {
       const allKeys = this.settings.apiKey[provider];
       if (!allKeys || allKeys.length === 0) {
         throw new Error("Không có API key nào được cấu hình");
       }
-      return allKeys.filter((key) => {
+
+      return allKeys.filter(key => {
         if (!key) return false;
+
         const failedInfo = this.failedKeys.get(key);
         const activeInfo = this.activeKeys.get(key);
-        const isFailed =
-          failedInfo && Date.now() - failedInfo.timestamp < 60000;
-        const isBusy =
-          activeInfo && activeInfo.requests >= this.maxConcurrentRequests;
-        return !isFailed && !isBusy;
+        const stats = this.keyStats.get(key);
+
+        // Kiểm tra nhiều điều kiện
+        const isFailed = failedInfo && Date.now() - failedInfo.timestamp < 60000;
+        const isBusy = activeInfo && activeInfo.requests >= this.maxConcurrentRequests;
+        const hasLowSuccessRate = stats && stats.total > 10 &&
+          (stats.success / stats.total) < this.successRateThreshold;
+
+        return !isFailed && !isBusy && !hasLowSuccessRate;
       });
     }
-    getRandomKey(provider) {
+
+    // Thực hiện request với multiple keys
+    async executeWithMultipleKeys(promiseGenerator, provider, maxConcurrent = 3) {
       const availableKeys = this.getAvailableKeys(provider);
-      if (availableKeys.length === 0) {
+      if (!availableKeys || availableKeys.length === 0) {
         throw new Error("Không có API key khả dụng");
       }
-      return availableKeys[Math.floor(Math.random() * availableKeys.length)];
+
+      const promises = [];
+      let currentKeyIndex = 0;
+
+      const processRequest = async () => {
+        if (currentKeyIndex >= availableKeys.length) return null;
+        const key = availableKeys[currentKeyIndex++];
+
+        try {
+          const result = await this.useKey(key, () => promiseGenerator(key));
+          if (result) {
+            this.updateKeyStats(key, true);
+            return { status: "fulfilled", value: result };
+          }
+        } catch (error) {
+          this.updateKeyStats(key, false);
+          if (error.message.includes("API key not valid") ||
+            error.message.includes("rate limit")) {
+            this.markKeyAsFailed(key);
+          }
+          return { status: "rejected", reason: error };
+        }
+      };
+
+      for (let i = 0; i < Math.min(maxConcurrent, availableKeys.length); i++) {
+        promises.push(processRequest());
+      }
+
+      const results = await Promise.all(promises);
+      const successResults = results
+        .filter(r => r && r.status === "fulfilled")
+        .map(r => r.value);
+
+      if (successResults.length > 0) {
+        return successResults;
+      }
+
+      throw new Error("Tất cả API key đều thất bại");
     }
+
+    // Sử dụng một key cụ thể
     async useKey(key, action) {
-      let activeInfo = this.activeKeys.get(key) || { requests: 0 };
+      let activeInfo = this.activeKeys.get(key) || {
+        requests: 0,
+        timestamp: Date.now()
+      };
       activeInfo.requests++;
       this.activeKeys.set(key, activeInfo);
+
       try {
         const result = await action();
         return result;
       } catch (error) {
-        if (
-          error.message.includes("API key not valid") ||
+        if (error.message.includes("API key not valid") ||
           error.message.includes("rate limit") ||
           error.status === 400 ||
-          error.status === 429
-        ) {
+          error.status === 429) {
           this.markKeyAsFailed(key);
         }
         throw error;
@@ -2417,57 +2461,70 @@
         }
       }
     }
-    async executeWithMultipleKeys(
-      promiseGenerator,
-      provider,
-      maxConcurrent = 3
-    ) {
-      const availableKeys = this.getAvailableKeys(provider);
-      if (!availableKeys || availableKeys.length === 0) {
-        throw new Error("Không có API key khả dụng");
-      }
-      const errors = [];
-      const promises = [];
-      let currentKeyIndex = 0;
-      const processNext = async () => {
-        if (currentKeyIndex >= availableKeys.length) return null;
-        const key = availableKeys[currentKeyIndex++];
-        try {
-          const result = await this.useKey(key, () => promiseGenerator(key));
-          if (result) return result;
-        } catch (error) {
-          errors.push({ key, error });
-          if (
-            error.message.includes("API key not valid") ||
-            error.message.includes("rate limit")
-          ) {
-            this.markKeyAsFailed(key);
-          }
-          return processNext();
-        }
-      };
-      for (let i = 0; i < Math.min(maxConcurrent, availableKeys.length); i++) {
-        promises.push(processNext());
-      }
-      const results = await Promise.all(promises);
-      const successResults = results.filter(r => r && r.status === "fulfilled").map(r => r.value);
-      if (successResults.length > 0) {
-        return successResults;
-      }
-      throw new Error(`Tất cả API key đều thất bại: ${errors.map(e => e.error.message).join(", ")}`);
-    }
+
+    // Đánh dấu key thất bại
     markKeyAsFailed(key) {
-      this.failedKeys.set(key, {
-        timestamp: Date.now(),
-        failures: (this.failedKeys.get(key)?.failures || 0) + 1,
-      });
+      if (!key) return;
+      const failInfo = this.failedKeys.get(key) || { failures: 0 };
+      failInfo.failures++;
+      failInfo.timestamp = Date.now();
+      this.failedKeys.set(key, failInfo);
+
+      if (this.activeKeys.has(key)) {
+        this.activeKeys.delete(key);
+      }
+
+      this.updateKeyStats(key, false);
+      console.log(`Marked key as failed: ${key.slice(0, 8)}... (${failInfo.failures} failures)`);
     }
+
+    // Cập nhật thống kê key
+    updateKeyStats(key, success) {
+      const stats = this.keyStats.get(key) || {
+        success: 0,
+        fails: 0,
+        total: 0,
+        lastUsed: 0,
+        avgResponseTime: 0
+      };
+
+      stats.total++;
+      if (success) {
+        stats.success++;
+      } else {
+        stats.fails++;
+      }
+
+      stats.lastUsed = Date.now();
+      this.keyStats.set(key, stats);
+    }
+
+    // Thiết lập rotation key tự động
     setupKeyRotation() {
       setInterval(() => {
         const now = Date.now();
+
+        // Xóa failed keys cũ
         for (const [key, info] of this.failedKeys.entries()) {
           if (now - info.timestamp >= 60000) {
             this.failedKeys.delete(key);
+          }
+        }
+
+        // Reset active requests
+        for (const [key, info] of this.activeKeys.entries()) {
+          if (now - info.timestamp >= 30000) {
+            info.requests = 0;
+            this.activeKeys.set(key, info);
+          }
+        }
+
+        // Cập nhật thống kê
+        for (const [key, stats] of this.keyStats.entries()) {
+          if (now - stats.lastUsed > 3600000) { // 1 giờ
+            stats.success = Math.floor(stats.success * 0.9);
+            stats.total = Math.floor(stats.total * 0.9);
+            this.keyStats.set(key, stats);
           }
         }
       }, this.keyRotationInterval);
@@ -2486,98 +2543,81 @@
       if (!provider) {
         throw new Error(`Provider ${this.currentProvider} not found`);
       }
-      let attempts = 0;
-      let lastError;
-      while (attempts < this.config.maxRetries) {
-        try {
-          const key = await this.keyManager.getRandomKey(this.currentProvider);
-          const response = await this.keyManager.useKey(key, () =>
-            this.makeRequest(provider, prompt, key)
-          );
-          return provider.responseParser(response);
-        } catch (error) {
-          console.error(`Attempt ${attempts + 1} failed:`, error);
-          lastError = error;
-          attempts++;
-          if (error.message.includes("rate limit")) {
-            continue;
-          }
-          await new Promise((resolve) =>
-            setTimeout(resolve, this.config.retryDelay * Math.pow(2, attempts))
-          );
-        }
-      }
-      throw (
-        lastError || new Error("Failed to get translation after all retries")
-      );
-    }
-    async batchRequest(prompts) {
-      return this.keyManager.executeWithMultipleKeys(async (key) => {
-        const results = [];
-        for (const prompt of prompts) {
-          const response = await this.makeRequest(
-            this.config.providers[this.currentProvider],
-            prompt,
-            key
-          );
-          results.push(response);
-        }
-        return results;
-      }, this.currentProvider);
-    }
-    async makeRequest(provider, prompt, key) {
-      const selectedModel = this.getGeminiModel();
-      return new Promise((resolve, reject) => {
-        GM_xmlhttpRequest({
-          method: "POST",
-          url: `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${key}`,
-          headers: { "Content-Type": "application/json" },
-          data: JSON.stringify({
-            contents: [
-              {
-                parts: [{ text: prompt }],
-              },
-            ],
-            generationConfig: {
-              temperature: this.getSettings().mediaOptions.temperature,
-              topP: this.getSettings().mediaOptions.topP,
-              topK: this.getSettings().mediaOptions.topK,
-            },
-          }),
-          onload: (response) => {
-            if (response.status === 200) {
-              try {
-                const result = JSON.parse(response.responseText);
-                if (result?.candidates?.[0]?.content?.parts?.[0]?.text) {
-                  resolve(result.candidates[0].content.parts[0].text);
-                } else {
-                  reject(new Error("Invalid response format"));
-                }
-              } catch (error) {
-                reject(new Error("Failed to parse response"));
-              }
-            } else {
-              if (response.status === 400) {
-                reject(new Error("API key not valid"));
-              } else if (response.status === 429) {
-                reject(new Error("API key rate limit exceeded"));
-              } else {
-                reject(new Error(`API Error: ${response.status}`));
-              }
-            }
+
+      try {
+        const responses = await this.keyManager.executeWithMultipleKeys(
+          async (key) => {
+            const selectedModel = this.getGeminiModel();
+            return new Promise((resolve, reject) => {
+              GM_xmlhttpRequest({
+                method: "POST",
+                url: `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${key}`,
+                headers: { "Content-Type": "application/json" },
+                data: JSON.stringify({
+                  contents: [{
+                    parts: [{ text: prompt }]
+                  }],
+                  generationConfig: {
+                    temperature: this.getSettings().mediaOptions.temperature,
+                    topP: this.getSettings().mediaOptions.topP,
+                    topK: this.getSettings().mediaOptions.topK
+                  }
+                }),
+                onload: (response) => {
+                  if (response.status === 200) {
+                    try {
+                      const result = JSON.parse(response.responseText);
+                      if (result?.candidates?.[0]?.content?.parts?.[0]?.text) {
+                        resolve(result.candidates[0].content.parts[0].text);
+                      } else {
+                        reject(new Error("Invalid response format"));
+                      }
+                    } catch (error) {
+                      reject(new Error("Failed to parse response"));
+                    }
+                  } else {
+                    if (response.status === 400) {
+                      reject(new Error("API key not valid"));
+                    } else if (response.status === 429) {
+                      reject(new Error("API key rate limit exceeded"));
+                    } else {
+                      reject(new Error(`API Error: ${response.status}`));
+                    }
+                  }
+                },
+                onerror: (error) => reject(error)
+              });
+            });
           },
-          onerror: (error) => reject(error),
-        });
-      });
+          this.currentProvider
+        );
+
+        // Lấy kết quả đầu tiên thành công
+        if (responses && responses.length > 0) {
+          return provider.responseParser(responses[0]);
+        }
+
+        throw new Error("Failed to get translation after all retries");
+
+      } catch (error) {
+        console.error("Request failed:", error);
+        throw error;
+      }
     }
     getGeminiModel() {
       const settings = this.getSettings();
       return settings.selectedModel || "gemini-2.0-flash-lite";
     }
     markKeyAsFailed(key) {
-      if (this.keyManager) {
-        this.keyManager.markKeyAsFailed(key);
+      if (!key) return;
+      const failInfo = this.failedKeys.get(key) || { failures: 0 };
+      failInfo.failures++;
+      failInfo.timestamp = Date.now();
+      this.failedKeys.set(key, failInfo);
+      if (this.activeKeys.has(key)) {
+        this.activeKeys.delete(key);
       }
+      console.log(`Marked key as failed: ${key.slice(0, 8)}... (${failInfo.failures} failures)`);
     }
   }
   class InputTranslator {
@@ -2963,7 +3003,7 @@
     cleanup() {
       this.mutationObserver.disconnect();
       this.resizeObserver.disconnect();
-      this.activeButtons.forEach((container, editor) => {
+      this.activeButtons.forEach((_container, editor) => {
         this.removeTranslateButton(editor);
       });
     }
@@ -3095,46 +3135,41 @@
           },
         };
         this.translator.ui.updateProcessingStatus("Đang xử lý OCR...", 60);
-        const results =
-          await this.translator.api.keyManager.executeWithMultipleKeys(
-            async (key) => {
-              const response = await new Promise((resolve, reject) => {
-                GM_xmlhttpRequest({
-                  method: "POST",
-                  url: `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${key}`,
-                  headers: { "Content-Type": "application/json" },
-                  data: JSON.stringify(requestBody),
-                  onload: (response) => {
-                    if (response.status === 200) {
-                      try {
-                        const result = JSON.parse(response.responseText);
-                        if (
-                          result?.candidates?.[0]?.content?.parts?.[0]?.text
-                        ) {
-                          resolve(result.candidates[0].content.parts[0].text);
-                        } else {
-                          reject(new Error("Không thể đọc kết quả từ API"));
-                        }
-                      } catch (error) {
-                        reject(new Error("Không thể parse kết quả API"));
+        const results = await this.translator.api.keyManager.executeWithMultipleKeys(
+          async (key) => {
+            const response = await new Promise((resolve, reject) => {
+              GM_xmlhttpRequest({
+                method: "POST",
+                url: `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${key}`,
+                headers: { "Content-Type": "application/json" },
+                data: JSON.stringify(requestBody),
+                onload: (response) => {
+                  if (response.status === 200) {
+                    try {
+                      const result = JSON.parse(response.responseText);
+                      if (result?.candidates?.[0]?.content?.parts?.[0]?.text) {
+                        resolve(result.candidates[0].content.parts[0].text);
+                      } else {
+                        reject(new Error("Invalid response format"));
                       }
-                    } else if (
-                      response.status === 429 ||
-                      response.status === 403
-                    ) {
+                    } catch (error) {
+                      reject(new Error("Failed to parse response"));
+                    }
+                  } else {
+                    if (response.status === 429 || response.status === 403) {
                       reject(new Error("API key rate limit exceeded"));
                     } else {
                       reject(new Error(`API Error: ${response.status}`));
                     }
-                  },
-                  onerror: (error) =>
-                    reject(new Error(`Lỗi kết nối: ${error}`)),
-                });
+                  }
+                },
+                onerror: (error) => reject(new Error(`Connection error: ${error}`))
               });
-              return response;
-            },
-            settings.apiProvider
-          );
+            });
+            return response;
+          },
+          settings.apiProvider
+        );
         this.translator.ui.updateProcessingStatus("Đang hoàn thiện...", 80);
         if (!results || results.length === 0) {
           throw new Error("Không thể trích xuất text từ ảnh");
@@ -3226,46 +3261,41 @@
           },
         };
         this.translator.ui.updateProcessingStatus("Đang dịch...", 60);
-        const results =
-          await this.translator.api.keyManager.executeWithMultipleKeys(
-            async (key) => {
-              const response = await new Promise((resolve, reject) => {
-                GM_xmlhttpRequest({
-                  method: "POST",
-                  url: `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${key}`,
-                  headers: { "Content-Type": "application/json" },
-                  data: JSON.stringify(requestBody),
-                  onload: (response) => {
-                    if (response.status === 200) {
-                      try {
-                        const result = JSON.parse(response.responseText);
-                        if (
-                          result?.candidates?.[0]?.content?.parts?.[0]?.text
-                        ) {
-                          resolve(result.candidates[0].content.parts[0].text);
-                        } else {
-                          reject(new Error("Invalid response format"));
-                        }
-                      } catch (error) {
-                        reject(new Error("Failed to parse response"));
+        const results = await this.translator.api.keyManager.executeWithMultipleKeys(
+          async (key) => {
+            const response = await new Promise((resolve, reject) => {
+              GM_xmlhttpRequest({
+                method: "POST",
+                url: `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${key}`,
+                headers: { "Content-Type": "application/json" },
+                data: JSON.stringify(requestBody),
+                onload: (response) => {
+                  if (response.status === 200) {
+                    try {
+                      const result = JSON.parse(response.responseText);
+                      if (result?.candidates?.[0]?.content?.parts?.[0]?.text) {
+                        resolve(result.candidates[0].content.parts[0].text);
+                      } else {
+                        reject(new Error("Invalid response format"));
                       }
-                    } else if (
-                      response.status === 429 ||
-                      response.status === 403
-                    ) {
+                    } catch (error) {
+                      reject(new Error("Failed to parse response"));
+                    }
+                  } else {
+                    if (response.status === 429 || response.status === 403) {
                       reject(new Error("API key rate limit exceeded"));
                     } else {
                       reject(new Error(`API Error: ${response.status}`));
                     }
-                  },
-                  onerror: (error) =>
-                    reject(new Error(`Connection error: ${error}`)),
-                });
+                  }
+                },
+                onerror: (error) => reject(new Error(`Connection error: ${error}`))
               });
-              return response;
-            },
-            settings.apiProvider
-          );
+            });
+            return response;
+          },
+          settings.apiProvider
+        );
         this.translator.ui.updateProcessingStatus("Đang hoàn thiện...", 80);
         if (!results || results.length === 0) {
           throw new Error("Không thể xử lý media");
@@ -3541,7 +3571,6 @@
         }
         const settings = this.translator.userSettings.settings.displayOptions;
         const mode = settings.translationMode;
-        const showSource = settings.languageLearning.showSource;
         const chunks = this.createChunks(textNodes, 2000); // Tăng kích thước chunk
         const translations = await Promise.all(chunks.map(async (chunk) => {
           const textsToTranslate = chunk
@@ -3563,7 +3592,7 @@
           const { chunk, translatedText } = translation;
           const translatedParts = translatedText.split("\n");
           let translationIndex = 0;
-          chunk.forEach((node, i) => {
+          chunk.forEach((node) => {
             const text = node.textContent.trim();
             if (text.length > 0 && node.parentNode) {
               this.originalTexts.set(node, node.textContent);
@@ -4327,29 +4356,73 @@
           .map((node) => node.textContent.trim())
           .filter((text) => text.length > 0)
           .join("\n");
+
         if (!textsToTranslate) return;
+
         const prompt = this.translator.createPrompt(textsToTranslate, "page");
-        const translatedText = await this.translator.api.request(prompt);
-        if (translatedText) {
-          const translatedParts = translatedText.split("\n");
-          let translationIndex = 0;
-          for (let i = 0; i < chunk.length; i++) {
-            const node = chunk[i];
-            const text = node.textContent.trim();
-            if (text.length > 0 && node.parentNode) {
-              this.originalTexts.set(node, node.textContent);
-              if (translationIndex < translatedParts.length) {
-                const translated = translatedParts[translationIndex++];
-                const settings =
-                  this.translator.userSettings.settings.displayOptions;
-                const mode = settings.translationMode;
-                let output = this.formatTranslation(
-                  text,
-                  translated,
-                  mode,
-                  settings
-                );
-                node.textContent = output;
+        const settings = this.translator.userSettings.settings;
+        const responses = await this.translator.api.keyManager.executeWithMultipleKeys(
+          async (key) => {
+            const selectedModel = this.translator.api.getGeminiModel();
+            const response = await new Promise((resolve, reject) => {
+              GM_xmlhttpRequest({
+                method: "POST",
+                url: `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${key}`,
+                headers: { "Content-Type": "application/json" },
+                data: JSON.stringify({
+                  contents: [{
+                    parts: [{ text: prompt }]
+                  }],
+                  generationConfig: {
+                    temperature: settings.ocrOptions.temperature,
+                    topP: settings.ocrOptions.topP,
+                    topK: settings.ocrOptions.topK
+                  }
+                }),
+                onload: (response) => {
+                  if (response.status === 200) {
+                    try {
+                      const result = JSON.parse(response.responseText);
+                      if (result?.candidates?.[0]?.content?.parts?.[0]?.text) {
+                        resolve(result.candidates[0].content.parts[0].text);
+                      } else {
+                        reject(new Error("Invalid response format"));
+                      }
+                    } catch (error) {
+                      reject(new Error("Failed to parse response"));
+                    }
+                  } else {
+                    if (response.status === 429 || response.status === 403) {
+                      reject(new Error("API key rate limit exceeded"));
+                    } else {
+                      reject(new Error(`API Error: ${response.status}`));
+                    }
+                  }
+                },
+                onerror: (error) => reject(error)
+              });
+            });
+            return response;
+          },
+          settings.apiProvider
+        );
+
+        if (responses && responses.length > 0) {
+          const translatedText = responses[0];
+          if (translatedText) {
+            const translatedParts = translatedText.split("\n");
+            let translationIndex = 0;
+            for (let i = 0; i < chunk.length; i++) {
+              const node = chunk[i];
+              const text = node.textContent.trim();
+              if (text.length > 0 && node.parentNode) {
+                this.originalTexts.set(node, node.textContent);
+                if (translationIndex < translatedParts.length) {
+                  const translated = translatedParts[translationIndex++];
+                  const mode = settings.displayOptions.translationMode;
+                  let output = this.formatTranslation(text, translated, mode, settings.displayOptions);
+                  node.textContent = output;
+                }
               }
             }
           }
@@ -6043,39 +6116,48 @@
           };
           input.click();
         },
-      });
-      menuItems.push({
-        icon: "📑",
-        text: "Dịch File PDF",
-        handler: () => {
-          const input = document.createElement("input");
-          input.type = "file";
-          input.accept = ".pdf";
-          input.style.display = "none";
-          input.onchange = async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            try {
-              this.showLoadingStatus("Đang xử lý PDF...");
-              const translatedBlob = await this.page.translatePDF(file);
-              const url = URL.createObjectURL(translatedBlob);
-              const a = document.createElement("a");
-              a.href = url;
-              a.download = `king1x32_translated_${file.name.replace(".pdf", ".html")}`;
-              a.click();
-              URL.revokeObjectURL(url);
-              this.showNotification("Dịch PDF thành công", "success");
-            } catch (error) {
-              console.error("Lỗi dịch PDF:", error);
-              this.showNotification(error.message, "error");
-            } finally {
-              this.removeLoadingStatus();
-              input.value = "";
-            }
-          };
-          input.click();
+      },
+        {
+          icon: "📑",
+          text: "Dịch File PDF",
+          handler: () => {
+            const input = document.createElement("input");
+            input.type = "file";
+            input.accept = ".pdf";
+            input.style.display = "none";
+            input.onchange = async (e) => {
+              const file = e.target.files[0];
+              if (!file) return;
+              try {
+                this.showLoadingStatus("Đang xử lý PDF...");
+                const translatedBlob = await this.page.translatePDF(file);
+                const url = URL.createObjectURL(translatedBlob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `king1x32_translated_${file.name.replace(".pdf", ".html")}`;
+                a.click();
+                URL.revokeObjectURL(url);
+                this.showNotification("Dịch PDF thành công", "success");
+              } catch (error) {
+                console.error("Lỗi dịch PDF:", error);
+                this.showNotification(error.message, "error");
+              } finally {
+                this.removeLoadingStatus();
+                input.value = "";
+              }
+            };
+            input.click();
+          },
         },
-      });
+        {
+          icon: "⚙️",
+          text: "Cài đặt King AI",
+          handler: () => {
+            dropdown.style.display = "none";
+            const settingsUI = this.translator.userSettings.createSettingsUI();
+            document.body.appendChild(settingsUI);
+          }
+        });
       menuItems.forEach((item) => {
         const menuItem = document.createElement("div");
         menuItem.className = "translator-tools-item";
@@ -7290,6 +7372,7 @@ Return ONLY a JSON object like:
       };
       this.api = new APIManager(apiConfig, () => this.userSettings.settings);
       this.ocr = new OCRManager(this);
+      this.media = new MediaManager(this);
       this.ui = new UIManager(this);
       this.cache = new TranslationCache(
         this.userSettings.settings.cacheOptions.text.maxSize,
@@ -7536,12 +7619,296 @@ Return ONLY a JSON object like:
       timeout = setTimeout(later, wait);
     };
   }
-  GM_registerMenuCommand("Cài đặt King Translator AI", () => {
+  const createFileInput = (accept, onFileSelected) => {
+    return new Promise((resolve) => {
+      const translator = window.translator;
+      const themeMode = translator.userSettings.settings.theme;
+      const theme = CONFIG.THEME[themeMode];
+      const div = document.createElement('div');
+      div.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 2147483647 !important;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: Arial, sans-serif;
+    `;
+      const container = document.createElement('div');
+      container.style.cssText = `
+      background: ${theme.background};
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      min-width: 300px;
+      border: 1px solid ${theme.border};
+    `;
+      const title = document.createElement('div');
+      title.style.cssText = `
+      color: ${theme.title};
+      font-size: 16px;
+      font-weight: bold;
+      text-align: center;
+      margin-bottom: 5px;
+    `;
+      title.textContent = 'Chọn file để dịch';
+      const inputContainer = document.createElement('div');
+      inputContainer.style.cssText = `
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      align-items: center;
+    `;
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = accept;
+      input.style.cssText = `
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px solid ${theme.border};
+      background: ${themeMode === 'dark' ? '#444' : '#fff'};
+      color: ${theme.text};
+      width: 100%;
+      cursor: pointer;
+    `;
+      const buttonContainer = document.createElement('div');
+      buttonContainer.style.cssText = `
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 10px;
+    `;
+      const cancelButton = document.createElement('button');
+      cancelButton.style.cssText = `
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: none;
+      background: ${theme.button.close.background};
+      color: ${theme.button.close.text};
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s ease;
+    `;
+      cancelButton.textContent = 'Hủy';
+      cancelButton.onmouseover = () => {
+        cancelButton.style.transform = 'translateY(-2px)';
+        cancelButton.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+      };
+      cancelButton.onmouseout = () => {
+        cancelButton.style.transform = 'none';
+        cancelButton.style.boxShadow = 'none';
+      };
+      const translateButton = document.createElement('button');
+      translateButton.style.cssText = `
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: none;
+      background: ${theme.button.translate.background};
+      color: ${theme.button.translate.text};
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s ease;
+      opacity: 0.5;
+    `;
+      translateButton.textContent = 'Dịch';
+      translateButton.disabled = true;
+      translateButton.onmouseover = () => {
+        if (!translateButton.disabled) {
+          translateButton.style.transform = 'translateY(-2px)';
+          translateButton.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+        }
+      };
+      translateButton.onmouseout = () => {
+        translateButton.style.transform = 'none';
+        translateButton.style.boxShadow = 'none';
+      };
+      const cleanup = () => {
+        div.remove();
+        resolve();
+      };
+      input.addEventListener('change', (e) => {
+        const file = e.target.files?.[0];
+        if (file) {
+          translateButton.disabled = false;
+          translateButton.style.opacity = '1';
+        } else {
+          translateButton.disabled = true;
+          translateButton.style.opacity = '0.5';
+        }
+      });
+      cancelButton.addEventListener('click', cleanup);
+      translateButton.addEventListener('click', async () => {
+        const file = input.files?.[0];
+        if (file) {
+          try {
+            translateButton.disabled = true;
+            translateButton.style.opacity = '0.5';
+            translateButton.textContent = 'Đang xử lý...';
+            await onFileSelected(file);
+          } catch (error) {
+            console.error('Error processing file:', error);
+          }
+          cleanup();
+        }
+      });
+      buttonContainer.appendChild(cancelButton);
+      buttonContainer.appendChild(translateButton);
+      inputContainer.appendChild(input);
+      container.appendChild(title);
+      container.appendChild(inputContainer);
+      container.appendChild(buttonContainer);
+      div.appendChild(container);
+      document.body.appendChild(div);
+      div.addEventListener('click', (e) => {
+        if (e.target === div) cleanup();
+      });
+    });
+  };
+  GM_registerMenuCommand("📄 Dịch trang", async () => {
+    const translator = window.translator;
+    if (translator) {
+      try {
+        translator.ui.showTranslatingStatus();
+        const result = await translator.page.translatePage();
+        if (result.success) {
+          translator.ui.showNotification(result.message, "success");
+        } else {
+          translator.ui.showNotification(result.message, "warning");
+        }
+      } catch (error) {
+        console.error("Page translation error:", error);
+        translator.ui.showNotification(error.message, "error");
+      } finally {
+        translator.ui.removeTranslatingStatus();
+      }
+    }
+  });
+  GM_registerMenuCommand("📷 Dịch Ảnh", async () => {
+    const translator = window.translator;
+    if (!translator) return;
+    await createFileInput("image/*", async (file) => {
+      try {
+        translator.ui.showTranslatingStatus();
+        const result = await translator.ocr.processImage(file);
+        translator.ui.displayPopup(result, null, "OCR Result");
+      } catch (error) {
+        translator.ui.showNotification(error.message);
+      } finally {
+        translator.ui.removeTranslatingStatus();
+      }
+    });
+  });
+  GM_registerMenuCommand("📸 Dịch Màn hình", async () => {
+    const translator = window.translator;
+    if (translator) {
+      try {
+        translator.ui.showTranslatingStatus();
+        const screenshot = await translator.ocr.captureScreen();
+        if (!screenshot) {
+          throw new Error("Không thể tạo ảnh chụp màn hình");
+        }
+        const result = await translator.ocr.processImage(screenshot);
+        if (!result) {
+          throw new Error("Không thể xử lý ảnh chụp màn hình");
+        }
+        translator.ui.displayPopup(result, null, "OCR Màn hình");
+      } catch (error) {
+        console.error("Screen translation error:", error);
+        translator.ui.showNotification(error.message, "error");
+      } finally {
+        translator.ui.removeTranslatingStatus();
+      }
+    }
+  });
+  GM_registerMenuCommand("🖼️ Dịch Ảnh Web", () => {
+    const translator = window.translator;
+    if (translator) {
+      translator.ui.startWebImageOCR();
+    }
+  });
+  GM_registerMenuCommand("📚 Dịch Manga", () => {
+    const translator = window.translator;
+    if (translator) {
+      translator.ui.startMangaTranslation();
+    }
+  });
+  GM_registerMenuCommand("🎵 Dịch Media", async () => {
+    const translator = window.translator;
+    if (!translator) return;
+    await createFileInput("audio/*, video/*", async (file) => {
+      try {
+        translator.ui.showTranslatingStatus();
+        await translator.media.processMediaFile(file);
+      } catch (error) {
+        translator.ui.showNotification(error.message);
+      } finally {
+        translator.ui.removeTranslatingStatus();
+      }
+    });
+  });
+  GM_registerMenuCommand("📄 Dịch File HTML", async () => {
+    const translator = window.translator;
+    if (!translator) return;
+    await createFileInput(".html,.htm", async (file) => {
+      try {
+        translator.ui.showTranslatingStatus();
+        const content = await translator.ui.readFileContent(file);
+        const translatedHTML = await translator.page.translateHTML(content);
+        const blob = new Blob([translatedHTML], { type: "text/html" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `king1x32_translated_${file.name}`;
+        document.body.appendChild(a);
+        a.click();
+        URL.revokeObjectURL(url);
+        a.remove();
+        translator.ui.showNotification("Dịch file HTML thành công", "success");
+      } catch (error) {
+        console.error("Lỗi dịch file HTML:", error);
+        translator.ui.showNotification(error.message, "error");
+      } finally {
+        translator.ui.removeTranslatingStatus();
+      }
+    });
+  });
+  GM_registerMenuCommand("📑 Dịch File PDF", async () => {
+    const translator = window.translator;
+    if (!translator) return;
+    await createFileInput(".pdf", async (file) => {
+      try {
+        translator.ui.showLoadingStatus("Đang xử lý PDF...");
+        const translatedBlob = await translator.page.translatePDF(file);
+        const url = URL.createObjectURL(translatedBlob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `king1x32_translated_${file.name.replace(".pdf", ".html")}`;
+        document.body.appendChild(a);
+        a.click();
+        URL.revokeObjectURL(url);
+        a.remove();
+        translator.ui.showNotification("Dịch PDF thành công", "success");
+      } catch (error) {
+        console.error("Lỗi dịch PDF:", error);
+        translator.ui.showNotification(error.message, "error");
+      } finally {
+        translator.ui.removeLoadingStatus();
+      }
+    });
+  });
+  GM_registerMenuCommand("⚙️ Cài đặt King Translator AI", () => {
     const translator = window.translator;
     if (translator) {
       const settingsUI = translator.userSettings.createSettingsUI();
       document.body.appendChild(settingsUI);
     }
   });
-  const translator = new Translator();
+  new Translator();
 })();
