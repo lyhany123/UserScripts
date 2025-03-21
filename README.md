@@ -1,5 +1,7 @@
 # King Translator AI - Công cụ dịch thuật đa năng tích hợp AI
 
+Link có ảnh tool/ extension: https://voz.vn/t/script-dung-ai-%C4%91e-dich-moi-thu-text-anh-audio-video.1072947/
+
 ![Version](https://img.shields.io/badge/version-4.2-blue)
 ![Status](https://img.shields.io/badge/status-updated-green)
 ![License](https://img.shields.io/badge/license-GPL3-orange)
